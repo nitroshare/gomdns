@@ -1,5 +1,7 @@
 ## gomdns
 
+[![Build Status](https://github.com/nitroshare/gomdns/actions/workflows/test.yml/badge.svg)](https://github.com/nitroshare/gomdns/actions/workflows/test.yml)
+[![Coverage Status](https://coveralls.io/repos/github/nitroshare/gomdns/badge.svg?branch=main)](https://coveralls.io/github/nitroshare/gomdns?branch=main)
 [![Go Reference](https://pkg.go.dev/badge/github.com/nitroshare/gomdns.svg)](https://pkg.go.dev/github.com/nitroshare/gomdns)
 [![MIT License](https://img.shields.io/badge/license-MIT-9370d8.svg?style=flat)](https://opensource.org/licenses/MIT)
 
