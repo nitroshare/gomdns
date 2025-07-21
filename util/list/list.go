@@ -14,11 +14,6 @@ type List[T any] struct {
 	Len   int
 }
 
-// New creates a new List instance.
-func New[T any]() *List[T] {
-	return &List[T]{}
-}
-
 // Add adds the specified value to the front of the list and returns it.
 func (l *List[T]) Add(v T) *Element[T] {
 	e := &Element[T]{

@@ -13,7 +13,7 @@ const (
 )
 
 func TestList(t *testing.T) {
-	l := New[string]()
+	l := &List[string]{}
 	test.Compare(t, l.Len, 0)
 	test.Compare(t, l.Back, nil)
 	test.Compare(t, l.Front, nil)
