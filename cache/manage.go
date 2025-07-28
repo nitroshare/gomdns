@@ -3,7 +3,8 @@ package cache
 import (
 	"time"
 
-	"github.com/nitroshare/gomdns/util/list"
+	"github.com/nitroshare/golist"
+	"github.com/nitroshare/mocktime"
 )
 
 func (c *Cache) add(record *Record) {
@@ -28,8 +29,8 @@ func (c *Cache) add(record *Record) {
 	}
 
 	var (
-		n        = fnNow()
-		triggers = &list.List[time.Time]{}
+		n        = mocktime.Now()
+		triggers = &golist.List[time.Time]{}
 	)
 
 	// Determine the triggers for re-querying the record
@@ -49,7 +50,7 @@ func (c *Cache) add(record *Record) {
 func (c *Cache) nextTrigger() <-chan time.Time {
 
 	var (
-		n           = fnNow()
+		n           = mocktime.Now()
 		nextTrigger time.Time
 	)
 
@@ -72,7 +73,7 @@ func (c *Cache) nextTrigger() <-chan time.Time {
 		if triggers.Len == 0 {
 			c.entries.Remove(e)
 			if c.chanExpired != nil {
-				c.chanAdd <- e.Value.record
+				c.chanExpired <- e.Value.record
 			}
 			continue
 		}
@@ -94,5 +95,5 @@ func (c *Cache) nextTrigger() <-chan time.Time {
 	}
 
 	// Otherwise, return a channel that sends for the next one
-	return fnAfter(nextTrigger.Sub(n))
+	return mocktime.After(nextTrigger.Sub(n))
 }

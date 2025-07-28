@@ -5,17 +5,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nitroshare/gomdns/util/list"
+	"github.com/nitroshare/golist"
 )
 
-var (
-	fnNow   = time.Now
-	fnAfter = time.After
-)
+// This channel is used by the testing suite for synchronization; it is
+// normally set to nil and otherwise has no effect on the package
+var chanTest chan any
 
 type recordEntry struct {
 	record   *Record
-	triggers *list.List[time.Time]
+	triggers *golist.List[time.Time]
 }
 
 // Cache stores records received from DNS queries and sends on the
@@ -23,7 +22,7 @@ type recordEntry struct {
 type Cache struct {
 	mutex       sync.Mutex
 	logger      *slog.Logger
-	entries     *list.List[*recordEntry]
+	entries     *golist.List[*recordEntry]
 	chanQuery   chan<- *Record
 	chanExpired chan<- *Record
 	chanAdd     chan *Record
@@ -35,11 +34,17 @@ func (c *Cache) run() {
 	for {
 		select {
 		case <-c.nextTrigger():
+			if chanTest != nil {
+				chanTest <- nil
+			}
 		case r, ok := <-c.chanAdd:
 			if !ok {
 				return
 			}
 			c.add(r)
+			if chanTest != nil {
+				chanTest <- nil
+			}
 		}
 	}
 }
@@ -48,7 +53,7 @@ func (c *Cache) run() {
 func New(cfg *Config) *Cache {
 	c := &Cache{
 		logger:      cfg.Logger,
-		entries:     &list.List[*recordEntry]{},
+		entries:     &golist.List[*recordEntry]{},
 		chanQuery:   cfg.ChanQuery,
 		chanExpired: cfg.ChanExpired,
 		chanAdd:     make(chan *Record),
