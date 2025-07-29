@@ -2,14 +2,9 @@ package cache
 
 import (
 	"testing"
-	"time"
 
 	"github.com/nitroshare/mocktime"
 )
-
-func init() {
-	chanTest = make(chan any)
-}
 
 func TestRecordQueryExpiry(t *testing.T) {
 	mocktime.Mock()
@@ -22,14 +17,13 @@ func TestRecordQueryExpiry(t *testing.T) {
 			ChanExpired: chanExpired,
 		})
 	)
-	r := &Record{
-		TTL: 10,
+	c.Add(&Record{
+		TTL: 1,
+	})
+	for range 4 {
+		mocktime.AdvanceToAfter()
+		<-chanQuery
 	}
-	c.Add(r)
-	mocktime.Advance(6 * time.Second)
-	<-chanTest
-	<-chanQuery
-	mocktime.Advance(5 * time.Second)
-	<-chanTest
+	mocktime.AdvanceToAfter()
 	<-chanExpired
 }

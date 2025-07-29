@@ -8,10 +8,6 @@ import (
 	"github.com/nitroshare/golist"
 )
 
-// This channel is used by the testing suite for synchronization; it is
-// normally set to nil and otherwise has no effect on the package
-var chanTest chan any
-
 type recordEntry struct {
 	record   *Record
 	triggers *golist.List[time.Time]
@@ -34,17 +30,11 @@ func (c *Cache) run() {
 	for {
 		select {
 		case <-c.nextTrigger():
-			if chanTest != nil {
-				chanTest <- nil
-			}
 		case r, ok := <-c.chanAdd:
 			if !ok {
 				return
 			}
 			c.add(r)
-			if chanTest != nil {
-				chanTest <- nil
-			}
 		}
 	}
 }
