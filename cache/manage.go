@@ -7,6 +7,17 @@ import (
 	"github.com/nitroshare/mocktime"
 )
 
+func (c *Cache) send(ch chan<- *Record, r *Record) {
+	c.wg.Add(1)
+	go func() {
+		defer c.wg.Done()
+		select {
+		case ch <- r:
+		case <-c.chanClose:
+		}
+	}()
+}
+
 func (c *Cache) nextTrigger() <-chan time.Time {
 
 	var (
@@ -33,7 +44,7 @@ func (c *Cache) nextTrigger() <-chan time.Time {
 		if triggers.Len == 0 {
 			c.entries.Remove(e)
 			if c.chanExpired != nil {
-				c.chanExpired <- e.Value.record
+				c.send(c.chanExpired, e.Value.record)
 			}
 			continue
 		}
@@ -45,7 +56,7 @@ func (c *Cache) nextTrigger() <-chan time.Time {
 
 		// If one of the triggers elapsed, a query is needed
 		if shouldQuery && c.chanQuery != nil {
-			c.chanQuery <- e.Value.record
+			c.send(c.chanQuery, e.Value.record)
 		}
 	}
 
@@ -67,7 +78,7 @@ func (c *Cache) add(record *Record) {
 			e.Value.record.sameRecord(record) {
 			c.entries.Remove(e)
 			if record.TTL == 0 && c.chanExpired != nil {
-				c.chanExpired <- e.Value.record
+				c.send(c.chanExpired, e.Value.record)
 			}
 		}
 	}
@@ -82,11 +93,13 @@ func (c *Cache) add(record *Record) {
 		triggers = &golist.List[time.Time]{}
 	)
 
-	// Determine the triggers for re-querying the record
-	triggers.Add(n.Add(time.Duration(record.TTL) * 500 * time.Millisecond))
-	triggers.Add(n.Add(time.Duration(record.TTL) * 850 * time.Millisecond))
-	triggers.Add(n.Add(time.Duration(record.TTL) * 900 * time.Millisecond))
-	triggers.Add(n.Add(time.Duration(record.TTL) * 950 * time.Millisecond))
+	// Determine the triggers for re-querying the record (if requested)
+	if c.chanQuery != nil {
+		triggers.Add(n.Add(time.Duration(record.TTL) * 500 * time.Millisecond))
+		triggers.Add(n.Add(time.Duration(record.TTL) * 850 * time.Millisecond))
+		triggers.Add(n.Add(time.Duration(record.TTL) * 900 * time.Millisecond))
+		triggers.Add(n.Add(time.Duration(record.TTL) * 950 * time.Millisecond))
+	}
 	triggers.Add(n.Add(time.Duration(record.TTL) * time.Second))
 
 	// Add the entry to the list of entries

@@ -23,7 +23,7 @@ var (
 	}
 )
 
-func TestRecordQueryAndExpiry(t *testing.T) {
+func TestQueryAndExpiry(t *testing.T) {
 	mocktime.Mock()
 	defer mocktime.Unmock()
 	var (
@@ -44,7 +44,7 @@ func TestRecordQueryAndExpiry(t *testing.T) {
 	<-chanExpired
 }
 
-func TestRecordLookup(t *testing.T) {
+func TestLookup(t *testing.T) {
 	mocktime.Mock()
 	defer mocktime.Unmock()
 	c := New(&Config{})
@@ -63,7 +63,7 @@ func TestRecordLookup(t *testing.T) {
 	}
 }
 
-func TestRecordFlush(t *testing.T) {
+func TestFlush(t *testing.T) {
 	mocktime.Mock()
 	defer mocktime.Unmock()
 	var (
@@ -89,4 +89,19 @@ func TestRecordFlush(t *testing.T) {
 		true,
 		true,
 	)
+}
+
+func TestNonBlockingSend(t *testing.T) {
+	mocktime.Mock()
+	defer mocktime.Unmock()
+	var (
+		chanExpired = make(chan *Record)
+		c           = New(&Config{
+			ChanExpired: chanExpired,
+		})
+	)
+	defer func() { <-chanExpired }()
+	defer c.Close()
+	c.Add(testRecord)
+	mocktime.AdvanceToAfter()
 }

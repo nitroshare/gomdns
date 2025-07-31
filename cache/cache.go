@@ -2,6 +2,7 @@ package cache
 
 import (
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/nitroshare/golist"
@@ -20,6 +21,7 @@ type lookupParams struct {
 // Cache stores records received from DNS queries and sends on the
 // shouldQuery channel when records are about to expire.
 type Cache struct {
+	wg            sync.WaitGroup
 	logger        *slog.Logger
 	entries       *golist.List[*recordEntry]
 	chanQuery     chan<- *Record
@@ -29,10 +31,11 @@ type Cache struct {
 	chanLookup    chan *lookupParams
 	chanLookupRet chan []*Record
 	chanClose     chan any
+	chanClosed    chan any
 }
 
 func (c *Cache) run() {
-	defer close(c.chanClose)
+	defer close(c.chanClosed)
 	for {
 		select {
 		case <-c.nextTrigger():
@@ -59,6 +62,7 @@ func New(cfg *Config) *Cache {
 		chanLookup:    make(chan *lookupParams),
 		chanLookupRet: make(chan []*Record),
 		chanClose:     make(chan any),
+		chanClosed:    make(chan any),
 	}
 	if c.logger == nil {
 		c.logger = slog.Default()
@@ -84,6 +88,13 @@ func (c *Cache) Lookup(name string, _type uint16) []*Record {
 
 // Close shuts down the cache.
 func (c *Cache) Close() {
-	c.chanClose <- nil
-	<-c.chanClose
+	close(c.chanClose)
+	c.wg.Wait()
+	<-c.chanClosed
+	if c.chanQuery != nil {
+		close(c.chanQuery)
+	}
+	if c.chanExpired != nil {
+		close(c.chanExpired)
+	}
 }
