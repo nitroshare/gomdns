@@ -4,6 +4,7 @@ go 1.23.0
 
 require (
 	github.com/miekg/dns v1.1.67
+	github.com/nitroshare/compare v1.0.1
 	github.com/nitroshare/golist v1.0.2
 	github.com/nitroshare/mocktime v1.1.0
 )
