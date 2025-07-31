@@ -95,13 +95,18 @@ func TestNonBlockingSend(t *testing.T) {
 	mocktime.Mock()
 	defer mocktime.Unmock()
 	var (
+		chanQuery   = make(chan *Record)
 		chanExpired = make(chan *Record)
 		c           = New(&Config{
+			ChanQuery:   chanQuery,
 			ChanExpired: chanExpired,
 		})
 	)
-	defer func() { <-chanExpired }()
+	defer func() { <-chanQuery }()
 	defer c.Close()
 	c.Add(testRecord)
-	mocktime.AdvanceToAfter()
+	for range 5 {
+		mocktime.AdvanceToAfter()
+	}
+	<-chanExpired
 }

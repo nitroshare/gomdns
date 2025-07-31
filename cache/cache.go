@@ -89,8 +89,8 @@ func (c *Cache) Lookup(name string, _type uint16) []*Record {
 // Close shuts down the cache.
 func (c *Cache) Close() {
 	close(c.chanClose)
-	c.wg.Wait()
 	<-c.chanClosed
+	c.wg.Wait()
 	if c.chanQuery != nil {
 		close(c.chanQuery)
 	}
