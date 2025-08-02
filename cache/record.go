@@ -1,7 +1,10 @@
 package cache
 
 import (
+	"fmt"
 	"maps"
+
+	"github.com/miekg/dns"
 )
 
 // Record represents a structured DNS record.
@@ -35,4 +38,12 @@ func (r *Record) sameRecord(record *Record) bool {
 	return r.sameNameType(record) &&
 		r.Target == record.Target &&
 		maps.Equal(r.Attributes, record.Attributes)
+}
+
+func (r *Record) String() string {
+	return fmt.Sprintf(
+		"%s record for %s",
+		dns.Type(r.Type).String(),
+		r.Name,
+	)
 }

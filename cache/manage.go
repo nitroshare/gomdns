@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/nitroshare/golist"
@@ -44,7 +45,12 @@ func (c *Cache) nextTrigger() <-chan time.Time {
 		if triggers.Len == 0 {
 			c.entries.Remove(e)
 			if c.chanExpired != nil {
-				c.send(c.chanExpired, e.Value.record)
+				r := e.Value.record
+				c.logger.Debug(
+					"record expired",
+					slog.String("record", r.String()),
+				)
+				c.send(c.chanExpired, r)
 			}
 			continue
 		}
@@ -69,24 +75,34 @@ func (c *Cache) nextTrigger() <-chan time.Time {
 	return mocktime.After(nextTrigger.Sub(n))
 }
 
-func (c *Cache) add(record *Record) {
+func (c *Cache) add(r *Record) {
 
 	// If records with the same name / type exist, keep them only if they are
 	// different or the flush cache bit is not set
 	for e := c.entries.Front; e != nil; e = e.Next {
-		if e.Value.record.sameNameType(record) && record.FlushCache ||
-			e.Value.record.sameRecord(record) {
+		if e.Value.record.sameNameType(r) && r.FlushCache ||
+			e.Value.record.sameRecord(r) {
 			c.entries.Remove(e)
-			if record.TTL == 0 && c.chanExpired != nil {
+			if r.TTL == 0 && c.chanExpired != nil {
 				c.send(c.chanExpired, e.Value.record)
 			}
 		}
 	}
 
 	// If the record is being removed, nothing more needs to be done
-	if record.TTL == 0 {
+	if r.TTL == 0 {
+		c.logger.Debug(
+			"removed record",
+			slog.String("record", r.String()),
+		)
 		return
 	}
+
+	// Log the new record
+	c.logger.Debug(
+		"added record",
+		slog.String("record", r.String()),
+	)
 
 	var (
 		n        = mocktime.Now()
@@ -95,16 +111,16 @@ func (c *Cache) add(record *Record) {
 
 	// Determine the triggers for re-querying the record (if requested)
 	if c.chanQuery != nil {
-		triggers.Add(n.Add(time.Duration(record.TTL) * 500 * time.Millisecond))
-		triggers.Add(n.Add(time.Duration(record.TTL) * 850 * time.Millisecond))
-		triggers.Add(n.Add(time.Duration(record.TTL) * 900 * time.Millisecond))
-		triggers.Add(n.Add(time.Duration(record.TTL) * 950 * time.Millisecond))
+		triggers.Add(n.Add(time.Duration(r.TTL) * 500 * time.Millisecond))
+		triggers.Add(n.Add(time.Duration(r.TTL) * 850 * time.Millisecond))
+		triggers.Add(n.Add(time.Duration(r.TTL) * 900 * time.Millisecond))
+		triggers.Add(n.Add(time.Duration(r.TTL) * 950 * time.Millisecond))
 	}
-	triggers.Add(n.Add(time.Duration(record.TTL) * time.Second))
+	triggers.Add(n.Add(time.Duration(r.TTL) * time.Second))
 
 	// Add the entry to the list of entries
 	c.entries.Add(&recordEntry{
-		record:   record,
+		record:   r,
 		triggers: triggers,
 	})
 }

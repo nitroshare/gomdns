@@ -67,6 +67,7 @@ func New(cfg *Config) *Cache {
 	if c.logger == nil {
 		c.logger = slog.Default()
 	}
+	c.logger = c.logger.With("package", "cache")
 	go c.run()
 	return c
 }
