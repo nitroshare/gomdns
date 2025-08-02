@@ -44,12 +44,12 @@ func (c *Cache) nextTrigger() <-chan time.Time {
 		// If there are no triggers, the record has expired
 		if triggers.Len == 0 {
 			c.entries.Remove(e)
+			r := e.Value.record
+			c.logger.Debug(
+				"record expired",
+				slog.String("record", r.String()),
+			)
 			if c.chanExpired != nil {
-				r := e.Value.record
-				c.logger.Debug(
-					"record expired",
-					slog.String("record", r.String()),
-				)
 				c.send(c.chanExpired, r)
 			}
 			continue
@@ -89,13 +89,15 @@ func (c *Cache) add(r *Record) {
 		)
 		if sameNameType && r.FlushCache || sameRecord {
 			c.entries.Remove(e)
-			if (r.TTL == 0 || !sameRecord) && c.chanExpired != nil {
+			if r.TTL == 0 || !sameRecord {
 				r := e.Value.record
 				c.logger.Debug(
 					"removed record",
 					slog.String("record", r.String()),
 				)
-				c.send(c.chanExpired, r)
+				if c.chanExpired != nil {
+					c.send(c.chanExpired, r)
+				}
 			}
 		}
 	}
@@ -107,7 +109,7 @@ func (c *Cache) add(r *Record) {
 
 	// Log the new record
 	c.logger.Debug(
-		"added record",
+		"added / updated record",
 		slog.String("record", r.String()),
 	)
 
