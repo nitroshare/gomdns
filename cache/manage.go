@@ -77,24 +77,31 @@ func (c *Cache) nextTrigger() <-chan time.Time {
 
 func (c *Cache) add(r *Record) {
 
-	// If records with the same name / type exist, keep them only if they are
-	// different or the flush cache bit is not set
+	// Remove old records that are:
+	// - of the same name/type and flush cache is set
+	// - identical and TTL is set to 0
+	// (Note that identical records are removed below even if TTL is set to 0;
+	// this is to prevent a duplicate when the updated record is added again.)
 	for e := c.entries.Front; e != nil; e = e.Next {
-		if e.Value.record.sameNameType(r) && r.FlushCache ||
-			e.Value.record.sameRecord(r) {
+		var (
+			sameNameType = e.Value.record.sameNameType(r)
+			sameRecord   = e.Value.record.sameRecord(r)
+		)
+		if sameNameType && r.FlushCache || sameRecord {
 			c.entries.Remove(e)
-			if r.TTL == 0 && c.chanExpired != nil {
-				c.send(c.chanExpired, e.Value.record)
+			if (r.TTL == 0 || !sameRecord) && c.chanExpired != nil {
+				r := e.Value.record
+				c.logger.Debug(
+					"removed record",
+					slog.String("record", r.String()),
+				)
+				c.send(c.chanExpired, r)
 			}
 		}
 	}
 
 	// If the record is being removed, nothing more needs to be done
 	if r.TTL == 0 {
-		c.logger.Debug(
-			"removed record",
-			slog.String("record", r.String()),
-		)
 		return
 	}
 
