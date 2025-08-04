@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net"
+	"sync"
 	"syscall"
 	"time"
 
@@ -26,14 +27,16 @@ var (
 // Server sends and receives DNS messages on all available multicast
 // interfaces.
 type Server struct {
-	logger    *slog.Logger
-	pconn4    *ipv4.PacketConn
-	pconn6    *ipv6.PacketConn
-	chanClose chan any
+	wg         sync.WaitGroup
+	logger     *slog.Logger
+	pconn4     *ipv4.PacketConn
+	pconn6     *ipv6.PacketConn
+	chanPacket chan<- []byte
+	chanClose  chan any
 }
 
 func (s *Server) run() {
-	defer close(s.chanClose)
+	defer s.wg.Done()
 	var (
 		tickerScan = mocktime.NewTicker(30 * time.Second)
 	)
@@ -81,26 +84,33 @@ func New(cfg *Config) (*Server, error) {
 
 	// Create the server, converting the net.PacketConn to ipv4/6.PacketConn
 	s := &Server{
-		logger:    cfg.Logger,
-		pconn4:    ipv4.NewPacketConn(conn4),
-		pconn6:    ipv6.NewPacketConn(conn6),
-		chanClose: make(chan any),
+		logger:     cfg.Logger,
+		pconn4:     ipv4.NewPacketConn(conn4),
+		pconn6:     ipv6.NewPacketConn(conn6),
+		chanPacket: cfg.ChanPacket,
+		chanClose:  make(chan any),
 	}
 	if s.logger == nil {
 		s.logger = slog.Default()
 	}
 	s.logger = s.logger.With("package", "server")
 
-	// Start the goroutine
+	// Start the goroutines
+	s.wg.Add(3)
 	go s.run()
+	go s.read(conn4)
+	go s.read(conn6)
 
 	return s, nil
 }
 
+// TODO: call LeaveGroup for interfaces upon shutdown
+
 // Close shuts down the server.
 func (s *Server) Close() {
-	s.pconn4.Close()
 	s.pconn6.Close()
-	s.chanClose <- nil
-	<-s.chanClose
+	s.pconn4.Close()
+	close(s.chanClose)
+	s.wg.Wait()
+	close(s.chanPacket)
 }
