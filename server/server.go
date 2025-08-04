@@ -22,6 +22,18 @@ var (
 	mDNSMulticastIPv6Addr = &net.UDPAddr{
 		IP: net.ParseIP("ff02::fb"),
 	}
+	listenConfig = net.ListenConfig{
+		Control: func(network, address string, c syscall.RawConn) error {
+			return c.Control(func(fd uintptr) {
+				syscall.SetsockoptInt(
+					syscall.Handle(fd),
+					syscall.SOL_SOCKET,
+					syscall.SO_REUSEADDR,
+					1,
+				)
+			})
+		},
+	}
 )
 
 // Server sends and receives DNS messages on all available multicast
@@ -55,28 +67,22 @@ func (s *Server) run() {
 // New attempts to create a new Server.
 func New(cfg *Config) (*Server, error) {
 
-	// Use ListenConfig to ensure SO_REUSEADDR is specified
-	lc := net.ListenConfig{
-		Control: func(network, address string, c syscall.RawConn) error {
-			return c.Control(func(fd uintptr) {
-				syscall.SetsockoptInt(
-					syscall.Handle(fd),
-					syscall.SOL_SOCKET,
-					syscall.SO_REUSEADDR,
-					1,
-				)
-			})
-		},
-	}
-
 	// Create the listener for IPv4 packets
-	conn4, err := lc.ListenPacket(context.Background(), "udp4", mDNSListenAddr)
+	conn4, err := listenConfig.ListenPacket(
+		context.Background(),
+		"udp4",
+		mDNSListenAddr,
+	)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create the listener for IPv6 packets
-	conn6, err := lc.ListenPacket(context.Background(), "udp6", mDNSListenAddr)
+	conn6, err := listenConfig.ListenPacket(
+		context.Background(),
+		"udp6",
+		mDNSListenAddr,
+	)
 	if err != nil {
 		conn4.Close()
 		return nil, err
