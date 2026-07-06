@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/nitroshare/golist"
-	"github.com/nitroshare/mocktime"
+	"github.com/nitroshare/gotime"
 )
 
 func (c *Cache) send(ch chan<- *Record, r *Record) {
@@ -22,7 +22,7 @@ func (c *Cache) send(ch chan<- *Record, r *Record) {
 func (c *Cache) nextTrigger() <-chan time.Time {
 
 	var (
-		n           = mocktime.Now()
+		n           = gotime.Now()
 		nextTrigger time.Time
 	)
 
@@ -72,7 +72,7 @@ func (c *Cache) nextTrigger() <-chan time.Time {
 	}
 
 	// Otherwise, return a channel that sends for the next one
-	return mocktime.After(nextTrigger.Sub(n))
+	return gotime.After(nextTrigger.Sub(n))
 }
 
 func (c *Cache) add(r *Record) {
@@ -114,7 +114,7 @@ func (c *Cache) add(r *Record) {
 	)
 
 	var (
-		n        = mocktime.Now()
+		n        = gotime.Now()
 		triggers = &golist.List[time.Time]{}
 	)
 

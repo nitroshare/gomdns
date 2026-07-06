@@ -6,7 +6,7 @@ import (
 
 	"github.com/miekg/dns"
 	"github.com/nitroshare/compare"
-	"github.com/nitroshare/mocktime"
+	"github.com/nitroshare/gotime"
 )
 
 const (
@@ -24,8 +24,8 @@ var (
 )
 
 func TestQueryAndExpiry(t *testing.T) {
-	mocktime.Mock()
-	defer mocktime.Unmock()
+	gotime.Mock()
+	defer gotime.Unmock()
 	var (
 		chanQuery   = make(chan *Record)
 		chanExpired = make(chan *Record)
@@ -37,16 +37,16 @@ func TestQueryAndExpiry(t *testing.T) {
 	defer c.Close()
 	c.Add(testRecord)
 	for range 4 {
-		mocktime.AdvanceToAfter()
+		gotime.AdvanceToAfter()
 		<-chanQuery
 	}
-	mocktime.AdvanceToAfter()
+	gotime.AdvanceToAfter()
 	<-chanExpired
 }
 
 func TestLookup(t *testing.T) {
-	mocktime.Mock()
-	defer mocktime.Unmock()
+	gotime.Mock()
+	defer gotime.Unmock()
 	c := New(&Config{})
 	defer c.Close()
 	for range 2 {
@@ -64,8 +64,8 @@ func TestLookup(t *testing.T) {
 }
 
 func TestFlush(t *testing.T) {
-	mocktime.Mock()
-	defer mocktime.Unmock()
+	gotime.Mock()
+	defer gotime.Unmock()
 	var (
 		chanExpired = make(chan *Record)
 		c           = New(&Config{
@@ -92,8 +92,8 @@ func TestFlush(t *testing.T) {
 }
 
 func TestNonBlockingSend(t *testing.T) {
-	mocktime.Mock()
-	defer mocktime.Unmock()
+	gotime.Mock()
+	defer gotime.Unmock()
 	var (
 		chanQuery   = make(chan *Record)
 		chanExpired = make(chan *Record)
@@ -106,7 +106,7 @@ func TestNonBlockingSend(t *testing.T) {
 	defer c.Close()
 	c.Add(testRecord)
 	for range 5 {
-		mocktime.AdvanceToAfter()
+		gotime.AdvanceToAfter()
 	}
 	<-chanExpired
 }
