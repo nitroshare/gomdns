@@ -3,17 +3,27 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ["1.24", "stable"]
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Go
-        uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - name: Setup Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Run test suite
+        run: go test -timeout 30s -v ./...
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Go
+        uses: actions/setup-go@v6
         with:
           go-version: "stable"
-
-      - name: Run test suite
-        run: go test -v -coverprofile=profile.cov ./...
-
+      - name: Generate coverage profile
+        run: go test -timeout 30s -v -coverprofile=profile.cov ./...
       - name: Coveralls
         uses: coverallsapp/github-action@v2
         with:
