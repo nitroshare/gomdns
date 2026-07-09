@@ -6,7 +6,7 @@ require (
 	github.com/miekg/dns v1.1.72
 	github.com/nitroshare/compare v1.1.0
 	github.com/nitroshare/golist v1.1.0
-	github.com/nitroshare/gomulticast v1.1.1
+	github.com/nitroshare/gomulticast v1.1.2
 	github.com/nitroshare/gotime v1.4.0
 )
 

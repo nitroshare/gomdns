@@ -6,8 +6,8 @@ github.com/nitroshare/compare v1.1.0 h1:0G7Tpt8LLXxe05DIzD67Iy9nb5YO3R2TbQlemqOk
 github.com/nitroshare/compare v1.1.0/go.mod h1:YnsFVZura0jowTncpTZtdciU1qdP3nthsqLAc5ql5F4=
 github.com/nitroshare/golist v1.1.0 h1:UsETU2gDgV6qNF8724PlxBGtIzTagEYQiz6zF4iKnBw=
 github.com/nitroshare/golist v1.1.0/go.mod h1:jJhoY4v2aiz2WYKSYE6/9OxnAEm2Nz6I4ZKmM/oDJgU=
-github.com/nitroshare/gomulticast v1.1.1 h1:BcxRM0LLnIrkmiYmb5iCnRmCUDAtUFLZRxVy2jDKjmg=
-github.com/nitroshare/gomulticast v1.1.1/go.mod h1:qWVE/OV8EnkdmwVjP6/c3Zt8mXNsy73xrAYMBSPJSfY=
+github.com/nitroshare/gomulticast v1.1.2 h1:+vpSHQLCzScyh2cZX1bAik1mDMrR5miSsGMMcUqbl6w=
+github.com/nitroshare/gomulticast v1.1.2/go.mod h1:qWVE/OV8EnkdmwVjP6/c3Zt8mXNsy73xrAYMBSPJSfY=
 github.com/nitroshare/gotime v1.4.0 h1:mlGqJduKJH32bgNqevjFzM8wvBo2LmcmM85P7k04UT4=
 github.com/nitroshare/gotime v1.4.0/go.mod h1:3VHEROn2AbMNR8D8tnktme53MroDWswv2LUj50c+MGM=
 golang.org/x/mod v0.31.0 h1:HaW9xtz0+kOcWKwli0ZXy79Ix+UW/vOfmWI5QVd2tgI=
