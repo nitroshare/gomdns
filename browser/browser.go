@@ -9,11 +9,13 @@ import (
 
 // Browser discovers services running on the local network.
 type Browser struct {
-	logger     *slog.Logger
-	cache      *cache.Cache
-	server     *server.Server
-	chanClose  chan any
-	chanClosed chan any
+	logger      *slog.Logger
+	cache       *cache.Cache
+	cacheClose  bool
+	server      *server.Server
+	serverClose bool
+	chanClose   chan any
+	chanClosed  chan any
 }
 
 func (b *Browser) run() {
@@ -41,6 +43,11 @@ func New(cfg *Config) *Browser {
 				Logger: b.logger,
 			},
 		)
+		b.cacheClose = true
+	}
+	if b.server == nil {
+		b.server = server.New()
+		b.serverClose = true
 	}
 	if b.logger == nil {
 		b.logger = slog.Default()
@@ -54,4 +61,10 @@ func New(cfg *Config) *Browser {
 func (b *Browser) Close() {
 	close(b.chanClose)
 	<-b.chanClosed
+	if b.serverClose {
+		b.server.Close()
+	}
+	if b.cacheClose {
+		b.cache.Close()
+	}
 }
