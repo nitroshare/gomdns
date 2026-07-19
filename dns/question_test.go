@@ -1,6 +1,7 @@
 package dns
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/nitroshare/compare"
@@ -34,10 +35,11 @@ func TestParseQuestion(t *testing.T) {
 		},
 		{
 			Name:  "Valid question",
-			Input: []byte{1, 'x', 0, 0, 1, 0, 0},
+			Input: []byte{1, 'x', 0, 0, 1, 0x80, 0},
 			Output: &Question{
-				Name: "x.",
-				Type: TypeA,
+				Name:    "x.",
+				Type:    TypeA,
+				Unicast: true,
 			},
 			EndOffset: 7,
 		},
@@ -51,11 +53,7 @@ func TestParseQuestion(t *testing.T) {
 		t.Run(v.Name, func(t *testing.T) {
 			offset := v.StartOffset
 			q, err := parseQuestion(v.Input, &offset)
-			compare.Compare(t, q != nil, v.Output != nil, true)
-			if q != nil {
-				compare.Compare(t, q.Name, v.Output.Name, true)
-				compare.Compare(t, q.Type, v.Output.Type, true)
-			}
+			compare.Compare(t, reflect.DeepEqual(q, v.Output), true, true)
 			compare.Compare(t, offset, v.EndOffset, true)
 			compare.Compare(t, err != nil, v.Err, true)
 		})
