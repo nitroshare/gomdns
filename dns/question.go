@@ -5,6 +5,11 @@ import (
 	"fmt"
 )
 
+type questionFields struct {
+	Type  uint16
+	Class uint16
+}
+
 type Question struct {
 	Name  string
 	Type  int
@@ -20,18 +25,15 @@ func parseQuestion(data []byte, offset *int) (*Question, error) {
 	if err != nil {
 		return nil, err
 	}
-	var values struct {
-		Type  uint16
-		Class uint16
-	}
-	n, err := binary.Decode(data[*offset:], binary.BigEndian, &values)
+	var fields questionFields
+	n, err := binary.Decode(data[*offset:], binary.BigEndian, &fields)
 	if err != nil {
 		return nil, err
 	}
 	*offset += n
 	return &Question{
 		Name:  v,
-		Type:  int(values.Type),
-		Class: int(values.Class),
+		Type:  int(fields.Type),
+		Class: int(fields.Class),
 	}, nil
 }
