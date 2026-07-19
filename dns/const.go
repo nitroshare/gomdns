@@ -10,7 +10,7 @@ const (
 )
 
 // TypeToString returns the string value for the specified type.
-func TypeToString(type_ int) string {
+func TypeToString(type_ uint16) string {
 	switch type_ {
 	case TypeA:
 		return "A"

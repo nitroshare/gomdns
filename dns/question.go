@@ -11,9 +11,9 @@ type questionFields struct {
 }
 
 type Question struct {
-	Name  string
-	Type  int
-	Class int
+	Name    string
+	Type    uint16
+	Unicast bool
 }
 
 func (q Question) String() string {
@@ -32,8 +32,8 @@ func parseQuestion(data []byte, offset *int) (*Question, error) {
 	}
 	*offset += n
 	return &Question{
-		Name:  v,
-		Type:  int(fields.Type),
-		Class: int(fields.Class),
+		Name:    v,
+		Type:    fields.Type,
+		Unicast: fields.Class&0x8000 != 0,
 	}, nil
 }
