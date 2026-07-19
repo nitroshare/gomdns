@@ -29,9 +29,8 @@ func TestParseQuestion(t *testing.T) {
 		Err         bool
 	}{
 		{
-			Name:  "Empty input",
-			Input: []byte{},
-			Err:   true,
+			Name: "Empty question",
+			Err:  true,
 		},
 		{
 			Name:  "Valid question",
