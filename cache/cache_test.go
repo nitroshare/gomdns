@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/miekg/dns"
 	"github.com/nitroshare/compare"
+	"github.com/nitroshare/gomdns/dns"
 	"github.com/nitroshare/gotime"
 )
 
@@ -16,10 +16,10 @@ const (
 )
 
 var (
-	testRecord = &Record{
+	testRecord = &dns.Record{
 		Name: testName,
 		Type: testType,
-		TTL:  testTTL,
+		Ttl:  testTTL,
 	}
 )
 
@@ -27,8 +27,8 @@ func TestQueryAndExpiry(t *testing.T) {
 	gotime.Mock()
 	defer gotime.Unmock()
 	var (
-		chanQuery   = make(chan *Record)
-		chanExpired = make(chan *Record)
+		chanQuery   = make(chan *dns.Record)
+		chanExpired = make(chan *dns.Record)
 		c           = New(&Config{
 			ChanQuery:   chanQuery,
 			ChanExpired: chanExpired,
@@ -55,7 +55,7 @@ func TestLookup(t *testing.T) {
 			t,
 			reflect.DeepEqual(
 				c.Lookup(testName, testType),
-				[]*Record{testRecord},
+				[]*dns.Record{testRecord},
 			),
 			true,
 			true,
@@ -67,14 +67,14 @@ func TestFlush(t *testing.T) {
 	gotime.Mock()
 	defer gotime.Unmock()
 	var (
-		chanExpired = make(chan *Record)
+		chanExpired = make(chan *dns.Record)
 		c           = New(&Config{
 			ChanExpired: chanExpired,
 		})
 	)
 	defer c.Close()
 	c.Add(testRecord)
-	go c.Add(&Record{
+	go c.Add(&dns.Record{
 		Name:       testName,
 		Type:       testType,
 		FlushCache: true,
@@ -84,7 +84,7 @@ func TestFlush(t *testing.T) {
 		t,
 		reflect.DeepEqual(
 			c.Lookup(testName, testType),
-			[]*Record{},
+			[]*dns.Record{},
 		),
 		true,
 		true,
@@ -95,8 +95,8 @@ func TestNonBlockingSend(t *testing.T) {
 	gotime.Mock()
 	defer gotime.Unmock()
 	var (
-		chanQuery   = make(chan *Record)
-		chanExpired = make(chan *Record)
+		chanQuery   = make(chan *dns.Record)
+		chanExpired = make(chan *dns.Record)
 		c           = New(&Config{
 			ChanQuery:   chanQuery,
 			ChanExpired: chanExpired,

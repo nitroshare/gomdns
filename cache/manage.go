@@ -5,10 +5,11 @@ import (
 	"time"
 
 	"github.com/nitroshare/golist"
+	"github.com/nitroshare/gomdns/dns"
 	"github.com/nitroshare/gotime"
 )
 
-func (c *Cache) send(ch chan<- *Record, r *Record) {
+func (c *Cache) send(ch chan<- *dns.Record, r *dns.Record) {
 	c.wg.Add(1)
 	go func() {
 		defer c.wg.Done()
@@ -75,7 +76,7 @@ func (c *Cache) nextTrigger() <-chan time.Time {
 	return gotime.After(nextTrigger.Sub(n))
 }
 
-func (c *Cache) add(r *Record) {
+func (c *Cache) add(r *dns.Record) {
 
 	// Remove old records that are:
 	// - of the same name/type and flush cache is set
@@ -84,12 +85,12 @@ func (c *Cache) add(r *Record) {
 	// this is to prevent a duplicate when the updated record is added again.)
 	for e := c.entries.Front; e != nil; e = e.Next {
 		var (
-			sameNameType = e.Value.record.sameNameType(r)
-			sameRecord   = e.Value.record.sameRecord(r)
+			sameNameType = e.Value.record.SameNameAndType(r)
+			sameRecord   = e.Value.record.SameRecord(r)
 		)
 		if sameNameType && r.FlushCache || sameRecord {
 			c.entries.Remove(e)
-			if r.TTL == 0 || !sameRecord {
+			if r.Ttl == 0 || !sameRecord {
 				r := e.Value.record
 				c.logger.Debug(
 					"removed record",
@@ -103,7 +104,7 @@ func (c *Cache) add(r *Record) {
 	}
 
 	// If the record is being removed, nothing more needs to be done
-	if r.TTL == 0 {
+	if r.Ttl == 0 {
 		return
 	}
 
@@ -120,12 +121,12 @@ func (c *Cache) add(r *Record) {
 
 	// Determine the triggers for re-querying the record (if requested)
 	if c.chanQuery != nil {
-		triggers.Add(n.Add(time.Duration(r.TTL) * 500 * time.Millisecond))
-		triggers.Add(n.Add(time.Duration(r.TTL) * 850 * time.Millisecond))
-		triggers.Add(n.Add(time.Duration(r.TTL) * 900 * time.Millisecond))
-		triggers.Add(n.Add(time.Duration(r.TTL) * 950 * time.Millisecond))
+		triggers.Add(n.Add(time.Duration(r.Ttl) * 500 * time.Millisecond))
+		triggers.Add(n.Add(time.Duration(r.Ttl) * 850 * time.Millisecond))
+		triggers.Add(n.Add(time.Duration(r.Ttl) * 900 * time.Millisecond))
+		triggers.Add(n.Add(time.Duration(r.Ttl) * 950 * time.Millisecond))
 	}
-	triggers.Add(n.Add(time.Duration(r.TTL) * time.Second))
+	triggers.Add(n.Add(time.Duration(r.Ttl) * time.Second))
 
 	// Add the entry to the list of entries
 	c.entries.Add(&recordEntry{
@@ -134,8 +135,8 @@ func (c *Cache) add(r *Record) {
 	})
 }
 
-func (c *Cache) lookup(name string, _type uint16) []*Record {
-	records := []*Record{}
+func (c *Cache) lookup(name string, _type uint16) []*dns.Record {
+	records := []*dns.Record{}
 	for e := c.entries.Front; e != nil; e = e.Next {
 		if e.Value.record.Name == name &&
 			e.Value.record.Type == _type {

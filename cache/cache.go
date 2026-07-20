@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/nitroshare/golist"
+	"github.com/nitroshare/gomdns/dns"
 )
 
 type recordEntry struct {
-	record   *Record
+	record   *dns.Record
 	triggers *golist.List[time.Time]
 }
 
@@ -24,12 +25,12 @@ type Cache struct {
 	wg            sync.WaitGroup
 	logger        *slog.Logger
 	entries       *golist.List[*recordEntry]
-	chanQuery     chan<- *Record
-	chanExpired   chan<- *Record
-	chanAdd       chan *Record
+	chanQuery     chan<- *dns.Record
+	chanExpired   chan<- *dns.Record
+	chanAdd       chan *dns.Record
 	chanAddRet    chan any
 	chanLookup    chan *lookupParams
-	chanLookupRet chan []*Record
+	chanLookupRet chan []*dns.Record
 	chanClose     chan any
 	chanClosed    chan any
 }
@@ -57,10 +58,10 @@ func New(cfg *Config) *Cache {
 		entries:       &golist.List[*recordEntry]{},
 		chanQuery:     cfg.ChanQuery,
 		chanExpired:   cfg.ChanExpired,
-		chanAdd:       make(chan *Record),
+		chanAdd:       make(chan *dns.Record),
 		chanAddRet:    make(chan any),
 		chanLookup:    make(chan *lookupParams),
-		chanLookupRet: make(chan []*Record),
+		chanLookupRet: make(chan []*dns.Record),
 		chanClose:     make(chan any),
 		chanClosed:    make(chan any),
 	}
@@ -73,13 +74,13 @@ func New(cfg *Config) *Cache {
 }
 
 // Add adds a record to the cache.
-func (c *Cache) Add(record *Record) {
+func (c *Cache) Add(record *dns.Record) {
 	c.chanAdd <- record
 	<-c.chanAddRet
 }
 
 // Lookup returns all records of the specified type for the provided name.
-func (c *Cache) Lookup(name string, _type uint16) []*Record {
+func (c *Cache) Lookup(name string, _type uint16) []*dns.Record {
 	c.chanLookup <- &lookupParams{
 		name:  name,
 		_type: _type,
