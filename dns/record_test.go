@@ -3,6 +3,7 @@ package dns
 import (
 	"net/netip"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/nitroshare/compare"
@@ -63,6 +64,148 @@ func TestRecordString(t *testing.T) {
 		"?? x.",
 		true,
 	)
+}
+
+func TestRecordSerialize(t *testing.T) {
+	for _, v := range []struct {
+		Name   string
+		Input  *Record
+		Output []byte
+		Err    bool
+	}{
+		{
+			Name: "Invalid record name",
+			Input: &Record{
+				Name: strings.Repeat("0", 64),
+			},
+			Err: true,
+		},
+		{
+			Name: "Valid A record",
+			Input: &Record{
+				Name:       "x",
+				Type:       TypeA,
+				FlushCache: true,
+				Ttl:        1,
+				Address:    netip.MustParseAddr("255.255.0.0"),
+			},
+			Output: []byte{
+				1, 'x', 0,
+				0, 1,
+				0x80, 0,
+				0, 0, 0, 1,
+				0, 4,
+				255, 255, 0, 0,
+			},
+		},
+		{
+			Name: "Valid PTR record",
+			Input: &Record{
+				Name:   "x",
+				Type:   TypePTR,
+				Target: "y",
+			},
+			Output: []byte{
+				1, 'x', 0,
+				0, 12,
+				0, 0,
+				0, 0, 0, 0,
+				0, 3,
+				1, 'y', 0,
+			},
+		},
+		{
+			Name: "Valid TXT record",
+			Input: &Record{
+				Name:       "x",
+				Type:       TypeTXT,
+				Attributes: []string{"y"},
+			},
+			Output: []byte{
+				1, 'x', 0,
+				0, 16,
+				0, 0,
+				0, 0, 0, 0,
+				0, 2,
+				1, 'y',
+			},
+		},
+		{
+			Name: "Valid SRV record",
+			Input: &Record{
+				Name:     "x",
+				Type:     TypeSRV,
+				Priority: 1,
+				Weight:   2,
+				Port:     80,
+				Target:   "y",
+			},
+			Output: []byte{
+				1, 'x', 0,
+				0, 33,
+				0, 0,
+				0, 0, 0, 0,
+				0, 9,
+				0, 1,
+				0, 2,
+				0, 80,
+				1, 'y', 0,
+			},
+		},
+		{
+			Name: "Valid AAAA record",
+			Input: &Record{
+				Name:    "x",
+				Type:    TypeAAAA,
+				Address: netip.MustParseAddr("::1"),
+			},
+			Output: []byte{
+				1, 'x', 0,
+				0, 28,
+				0, 0,
+				0, 0, 0, 0,
+				0, 16,
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+			},
+		},
+		{
+			Name: "Invalid PTR record",
+			Input: &Record{
+				Type:   TypePTR,
+				Target: strings.Repeat("0", 64),
+			},
+			Err: true,
+		},
+		{
+			Name: "Invalid TXT record",
+			Input: &Record{
+				Type:       TypeTXT,
+				Attributes: []string{strings.Repeat("0", 64)},
+			},
+			Err: true,
+		},
+		{
+			Name: "Invalid SRV record",
+			Input: &Record{
+				Type:   TypeSRV,
+				Target: strings.Repeat("0", 64),
+			},
+			Err: true,
+		},
+		{
+			Name: "Unknown record type",
+			Input: &Record{
+				Type: 255,
+			},
+			Err: true,
+		},
+	} {
+		t.Run(v.Name, func(t *testing.T) {
+			b, err := v.Input.serialize()
+			compare.Compare(t, reflect.DeepEqual(b, v.Output), true, true)
+			compare.Compare(t, err != nil, v.Err, true)
+		})
+	}
 }
 
 func TestParseRecord(t *testing.T) {

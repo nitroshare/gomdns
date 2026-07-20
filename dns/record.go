@@ -1,6 +1,7 @@
 package dns
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -9,7 +10,8 @@ import (
 )
 
 var (
-	errInvalidRecord = errors.New("error parsing record")
+	errSerializingRecord = errors.New("error serializing record")
+	errParsingRecord     = errors.New("error parsing record")
 )
 
 type recordFields struct {
@@ -63,6 +65,62 @@ func (r Record) String() string {
 	}
 }
 
+func (r Record) serialize() ([]byte, error) {
+	b := &bytes.Buffer{}
+	n, err := serializeName(r.Name)
+	if err != nil {
+		return nil, err
+	}
+	b.Write(n)
+	fields := &recordFields{
+		Type: r.Type,
+		Ttl:  r.Ttl,
+	}
+	if r.FlushCache {
+		fields.Class |= 0x8000
+	}
+	binary.Write(b, binary.BigEndian, fields)
+	offset := b.Len()
+	switch r.Type {
+	case TypeA:
+		binary.Write(b, binary.BigEndian, r.Address.As4())
+	case TypePTR:
+		n, err := serializeName(r.Target)
+		if err != nil {
+			return nil, err
+		}
+		b.Write(n)
+	case TypeTXT:
+		for _, a := range r.Attributes {
+			v := []byte(a)
+			if len(v) > 63 {
+				return nil, errSerializingName
+			}
+			b.WriteByte(uint8(len(v)))
+			b.Write(v)
+		}
+	case TypeSRV:
+		fields := &recordSRVFields{
+			Priority: r.Priority,
+			Weight:   r.Weight,
+			Port:     r.Port,
+		}
+		binary.Write(b, binary.BigEndian, fields)
+		n, err := serializeName(r.Target)
+		if err != nil {
+			return nil, err
+		}
+		b.Write(n)
+	case TypeAAAA:
+		binary.Write(b, binary.BigEndian, r.Address.As16())
+	default:
+		return nil, errSerializingRecord
+	}
+	v := b.Bytes()
+	binary.BigEndian.PutUint16(v[offset-2:], uint16(b.Len()-offset))
+	return v, nil
+}
+
 func parseRecord(data []byte, offset *int) (*Record, error) {
 	v, err := parseName(data, offset)
 	if err != nil {
@@ -111,7 +169,7 @@ func parseRecord(data []byte, offset *int) (*Record, error) {
 				continue
 			}
 			if *offset+v > len(data) {
-				return nil, errInvalidRecord
+				return nil, errParsingRecord
 			}
 			r.Attributes = append(r.Attributes, string(data[*offset:*offset+v]))
 			*offset += v
@@ -142,7 +200,7 @@ func parseRecord(data []byte, offset *int) (*Record, error) {
 	}
 	*offset = offsetStart + int(fields.DataLen)
 	if *offset > len(data) {
-		return nil, errInvalidRecord
+		return nil, errParsingRecord
 	}
 	return r, nil
 }
