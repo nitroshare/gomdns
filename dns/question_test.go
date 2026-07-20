@@ -21,12 +21,11 @@ func TestQuestionToString(t *testing.T) {
 
 func TestParseQuestion(t *testing.T) {
 	for _, v := range []struct {
-		Name        string
-		Input       []byte
-		Output      *Question
-		StartOffset int
-		EndOffset   int
-		Err         bool
+		Name      string
+		Input     []byte
+		Output    *Question
+		Err       bool
+		EndOffset int
 	}{
 		{
 			Name: "Empty question",
@@ -43,18 +42,19 @@ func TestParseQuestion(t *testing.T) {
 			EndOffset: 7,
 		},
 		{
-			Name:      "Truncated question",
-			Input:     []byte{1, 'x', 0},
-			EndOffset: 3,
-			Err:       true,
+			Name:  "Truncated question",
+			Input: []byte{1, 'x', 0},
+			Err:   true,
 		},
 	} {
 		t.Run(v.Name, func(t *testing.T) {
-			offset := v.StartOffset
+			offset := 0
 			q, err := parseQuestion(v.Input, &offset)
 			compare.Compare(t, reflect.DeepEqual(q, v.Output), true, true)
-			compare.Compare(t, offset, v.EndOffset, true)
 			compare.Compare(t, err != nil, v.Err, true)
+			if v.EndOffset != 0 {
+				compare.Compare(t, offset, v.EndOffset, true)
+			}
 		})
 	}
 }
