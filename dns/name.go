@@ -1,6 +1,7 @@
 package dns
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"strings"
@@ -12,8 +13,29 @@ import (
 // parsing to make sure pointers are valid.
 
 var (
-	errInvalidName = errors.New("error parsing name")
+	errSerializingName = errors.New("error serializing name")
+	errParsingName     = errors.New("error parsing name")
 )
+
+// TODO: take advantage of indirect pointers to conserve bytes
+
+func serializeName(name string) ([]byte, error) {
+	var (
+		b = bytes.Buffer{}
+		v = []byte(name)
+	)
+	if len(v) > 0 {
+		for _, v := range bytes.Split(v, []byte{'.'}) {
+			if len(v) > 63 {
+				return nil, errSerializingName
+			}
+			b.WriteByte(byte(len(v)))
+			b.Write(v)
+		}
+	}
+	b.WriteByte(0)
+	return b.Bytes(), nil
+}
 
 func parseName(data []byte, offset *int) (string, error) {
 	var (
@@ -35,7 +57,7 @@ func parseName(data []byte, offset *int) (string, error) {
 		case 0x00:
 			n := int(numBytes)
 			if *offset+n > len(data) {
-				return "", errInvalidName
+				return "", errParsingName
 			}
 			name.WriteString(string(data[*offset : *offset+n]))
 			name.WriteString(".")
@@ -49,7 +71,7 @@ func parseName(data []byte, offset *int) (string, error) {
 			*offset += n
 			newOffset := int((uint16(numBytes & ^uint8(0xc0)) << 8) | uint16(numBytes2))
 			if newOffset >= offsetPtr {
-				return "", errInvalidName
+				return "", errParsingName
 			}
 			offsetPtr = newOffset
 			if offsetEnd == 0 {
@@ -57,7 +79,7 @@ func parseName(data []byte, offset *int) (string, error) {
 			}
 			*offset = newOffset
 		default:
-			return "", errInvalidName
+			return "", errParsingName
 		}
 	}
 	if offsetEnd != 0 {

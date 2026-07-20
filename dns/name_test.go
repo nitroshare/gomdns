@@ -1,10 +1,44 @@
 package dns
 
 import (
+	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/nitroshare/compare"
 )
+
+func TestSerializeName(t *testing.T) {
+	for _, v := range []struct {
+		Name   string
+		Input  string
+		Output []byte
+		Err    bool
+	}{
+		{
+			Name:   "Empty name",
+			Output: []byte{0},
+		},
+		{
+			Name:  "Valid name",
+			Input: "x",
+			Output: []byte{
+				1, 'x', 0,
+			},
+		},
+		{
+			Name:  "Name > 63 bytes",
+			Input: strings.Repeat("0", 64),
+			Err:   true,
+		},
+	} {
+		t.Run(v.Name, func(t *testing.T) {
+			n, err := serializeName(v.Input)
+			compare.Compare(t, reflect.DeepEqual(n, v.Output), true, true)
+			compare.Compare(t, err != nil, v.Err, true)
+		})
+	}
+}
 
 func TestParseName(t *testing.T) {
 	for _, v := range []struct {
