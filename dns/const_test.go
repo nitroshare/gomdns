@@ -9,6 +9,7 @@ func TestTypeToString(t *testing.T) {
 		TypeTXT,
 		TypeSRV,
 		TypeAAAA,
+		TypeNSEC,
 		TypeAny,
 		254,
 	} {

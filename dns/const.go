@@ -6,6 +6,7 @@ const (
 	TypeTXT  = 16
 	TypeSRV  = 33
 	TypeAAAA = 28
+	TypeNSEC = 47
 	TypeAny  = 255
 )
 
@@ -22,6 +23,8 @@ func TypeToString(type_ uint16) string {
 		return "SRV"
 	case TypeAAAA:
 		return "AAAA"
+	case TypeNSEC:
+		return "NSEC"
 	case TypeAny:
 		return "*"
 	default:
