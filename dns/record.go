@@ -25,6 +25,8 @@ type recordSRVFields struct {
 	Port     uint16
 }
 
+// Record represents an answer to a DNS query. Not all fields are used by each
+// type of record, though the first four fields are common to all records.
 type Record struct {
 	Name       string
 	Type       uint16

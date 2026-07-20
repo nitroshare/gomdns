@@ -10,6 +10,7 @@ type questionFields struct {
 	Class uint16
 }
 
+// Question represents a DNS query for records.
 type Question struct {
 	Name    string
 	Type    uint16
