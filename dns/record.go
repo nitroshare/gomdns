@@ -42,7 +42,7 @@ type Record struct {
 	Port       uint16
 }
 
-func (r Record) String() string {
+func (r *Record) String() string {
 	v := fmt.Sprintf("%s %s", TypeToString(r.Type), r.Name)
 	switch r.Type {
 	case TypeA, TypeAAAA:
@@ -65,7 +65,7 @@ func (r Record) String() string {
 	}
 }
 
-func (r Record) serialize() ([]byte, error) {
+func (r *Record) serialize() ([]byte, error) {
 	b := &bytes.Buffer{}
 	n, err := serializeName(r.Name)
 	if err != nil {

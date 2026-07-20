@@ -18,11 +18,11 @@ type Question struct {
 	Unicast bool
 }
 
-func (q Question) String() string {
+func (q *Question) String() string {
 	return fmt.Sprintf("%s %s", TypeToString(q.Type), q.Name)
 }
 
-func (q Question) serialize() ([]byte, error) {
+func (q *Question) serialize() ([]byte, error) {
 	b := &bytes.Buffer{}
 	n, err := serializeName(q.Name)
 	if err != nil {

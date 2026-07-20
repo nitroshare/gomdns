@@ -11,10 +11,10 @@ import (
 func TestQuestionString(t *testing.T) {
 	compare.Compare(
 		t,
-		Question{
+		(&Question{
 			Name: "x.",
 			Type: TypeA,
-		}.String(),
+		}).String(),
 		"A x.",
 		true,
 	)

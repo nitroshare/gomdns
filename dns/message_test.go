@@ -12,17 +12,17 @@ import (
 func TestMessageString(t *testing.T) {
 	compare.Compare(
 		t,
-		Message{
+		(&Message{
 			TransactionID: 1,
-		}.String(),
+		}).String(),
 		"query id:1",
 		true,
 	)
 	compare.Compare(
 		t,
-		Message{
+		(&Message{
 			Response: true,
-		}.String(),
+		}).String(),
 		"response id:0",
 		true,
 	)

@@ -27,7 +27,7 @@ type Message struct {
 	Records       []*Record
 }
 
-func (m Message) String() string {
+func (m *Message) String() string {
 	var type_ string
 	if m.Response {
 		type_ = "response"
@@ -42,7 +42,7 @@ func (m Message) String() string {
 }
 
 // Serialize converts the message into its wire format.
-func (m Message) Serialize() ([]byte, error) {
+func (m *Message) Serialize() ([]byte, error) {
 	b := &bytes.Buffer{}
 	fields := &messageFields{
 		TransactionID: m.TransactionID,

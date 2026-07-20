@@ -12,55 +12,55 @@ import (
 func TestRecordString(t *testing.T) {
 	compare.Compare(
 		t,
-		Record{
+		(&Record{
 			Name:    "x.",
 			Type:    TypeA,
 			Address: netip.MustParseAddr("255.255.0.0"),
-		}.String(),
+		}).String(),
 		"A x. 255.255.0.0",
 		true,
 	)
 	compare.Compare(
 		t,
-		Record{
+		(&Record{
 			Name:   "x.",
 			Type:   TypePTR,
 			Target: "y.",
-		}.String(),
+		}).String(),
 		"PTR x. y.",
 		true,
 	)
 	compare.Compare(
 		t,
-		Record{
+		(&Record{
 			Name: "x.",
 			Type: TypeTXT,
 			Attributes: []string{
 				"1",
 				"2",
 			},
-		}.String(),
+		}).String(),
 		"TXT x. 1, 2",
 		true,
 	)
 	compare.Compare(
 		t,
-		Record{
+		(&Record{
 			Name:     "x.",
 			Type:     TypeSRV,
 			Priority: 1,
 			Weight:   2,
 			Port:     80,
 			Target:   "y.",
-		}.String(),
+		}).String(),
 		"SRV x. priority=1 weight=2 port=80 y.",
 		true,
 	)
 	compare.Compare(
 		t,
-		Record{
+		(&Record{
 			Name: "x.",
-		}.String(),
+		}).String(),
 		"?? x.",
 		true,
 	)
