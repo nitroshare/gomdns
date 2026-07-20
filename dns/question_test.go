@@ -2,12 +2,13 @@ package dns
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/nitroshare/compare"
 )
 
-func TestQuestionToString(t *testing.T) {
+func TestQuestionString(t *testing.T) {
 	compare.Compare(
 		t,
 		Question{
@@ -17,6 +18,42 @@ func TestQuestionToString(t *testing.T) {
 		"A x.",
 		true,
 	)
+}
+
+func TestQuestionSerialize(t *testing.T) {
+	for _, v := range []struct {
+		Name   string
+		Input  *Question
+		Output []byte
+		Err    bool
+	}{
+		{
+			Name: "Invalid question name",
+			Input: &Question{
+				Name: strings.Repeat("0", 64),
+			},
+			Err: true,
+		},
+		{
+			Name: "Valid question",
+			Input: &Question{
+				Name:    "x",
+				Type:    TypeA,
+				Unicast: true,
+			},
+			Output: []byte{
+				1, 'x', 0,
+				0, 1,
+				0x80, 0,
+			},
+		},
+	} {
+		t.Run(v.Name, func(t *testing.T) {
+			b, err := v.Input.serialize()
+			compare.Compare(t, reflect.DeepEqual(b, v.Output), true, true)
+			compare.Compare(t, err != nil, v.Err, true)
+		})
+	}
 }
 
 func TestParseQuestion(t *testing.T) {
