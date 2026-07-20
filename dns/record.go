@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
+	"slices"
 	"strings"
 )
 
@@ -40,6 +41,25 @@ type Record struct {
 	Priority   uint16
 	Weight     uint16
 	Port       uint16
+}
+
+// SameNameAndType returns true if the records are for the same name and type.
+func (r *Record) SameNameAndType(r2 *Record) bool {
+	return strings.EqualFold(r.Name, r2.Name) && r.Type == r2.Type
+}
+
+// SameRecord returns true if the records are considered "identical".
+func (r *Record) SameRecord(r2 *Record) bool {
+	return r.SameNameAndType(r2) &&
+		r.Address == r2.Address &&
+		strings.EqualFold(r.Target, r2.Target) &&
+		slices.Equal(
+			r.Attributes,
+			r2.Attributes,
+		) &&
+		r.Priority == r2.Priority &&
+		r.Weight == r2.Weight &&
+		r.Port == r2.Port
 }
 
 func (r *Record) String() string {

@@ -9,6 +9,42 @@ import (
 	"github.com/nitroshare/compare"
 )
 
+func TestRecordSameNameAndType(t *testing.T) {
+	var (
+		r1 = &Record{
+			Name: "x",
+			Type: TypeA,
+		}
+		r2 = &Record{
+			Name: "X",
+			Type: TypeA,
+		}
+		r3 = &Record{
+			Name: "y",
+			Type: TypeA,
+		}
+	)
+	compare.Compare(t, r1.SameNameAndType(r2), true, true)
+	compare.Compare(t, r2.SameNameAndType(r3), false, true)
+}
+
+func TestRecordSameRecord(t *testing.T) {
+	var (
+		r1 = &Record{
+			Name:       "x",
+			Type:       TypeTXT,
+			Attributes: []string{"a", "b"},
+		}
+		r2 = &Record{
+			Name:       "x",
+			Type:       TypeTXT,
+			Attributes: []string{"b", "a"},
+		}
+	)
+	compare.Compare(t, r1.SameRecord(r1), true, true)
+	compare.Compare(t, r1.SameRecord(r2), false, true)
+}
+
 func TestRecordString(t *testing.T) {
 	compare.Compare(
 		t,
