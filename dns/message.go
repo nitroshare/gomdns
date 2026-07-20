@@ -1,6 +1,7 @@
 package dns
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"net/netip"
@@ -38,6 +39,38 @@ func (m Message) String() string {
 		type_,
 		m.TransactionID,
 	)
+}
+
+// Serialize converts the message into its wire format.
+func (m Message) Serialize() ([]byte, error) {
+	b := &bytes.Buffer{}
+	fields := &messageFields{
+		TransactionID: m.TransactionID,
+		NumQuestions:  uint16(len(m.Questions)),
+		NumAnswers:    uint16(len(m.Records)),
+	}
+	if m.Response {
+		fields.Flags |= 0x8400
+	}
+	if m.Truncated {
+		fields.Flags |= 0x0200
+	}
+	binary.Write(b, binary.BigEndian, fields)
+	for _, q := range m.Questions {
+		v, err := q.serialize()
+		if err != nil {
+			return nil, err
+		}
+		b.Write(v)
+	}
+	for _, r := range m.Records {
+		v, err := r.serialize()
+		if err != nil {
+			return nil, err
+		}
+		b.Write(v)
+	}
+	return b.Bytes(), nil
 }
 
 // ParseMessage attempts to parse a DNS message. Note that this does not know

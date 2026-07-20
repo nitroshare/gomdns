@@ -3,6 +3,7 @@ package dns
 import (
 	"net/netip"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/nitroshare/compare"
@@ -25,6 +26,78 @@ func TestMessageString(t *testing.T) {
 		"response id:0",
 		true,
 	)
+}
+
+func TestMessageSerialize(t *testing.T) {
+	for _, v := range []struct {
+		Name   string
+		Input  *Message
+		Output []byte
+		Err    bool
+	}{
+		{
+			Name: "Valid message",
+			Input: &Message{
+				TransactionID: 1,
+				Response:      true,
+				Truncated:     true,
+				Questions: []*Question{
+					{
+						Name: "x",
+						Type: TypeA,
+					},
+				},
+				Records: []*Record{
+					{
+						Name:    "x",
+						Type:    TypeA,
+						Address: netip.MustParseAddr("255.255.0.0"),
+					},
+				},
+			},
+			Output: []byte{
+				0, 1,
+				0x86, 0,
+				0, 1,
+				0, 1,
+				0, 0,
+				0, 0,
+				1, 'x', 0,
+				0, 1,
+				0, 0,
+				1, 'x', 0,
+				0, 1,
+				0, 0,
+				0, 0, 0, 0,
+				0, 4,
+				255, 255, 0, 0,
+			},
+		},
+		{
+			Name: "Invalid question",
+			Input: &Message{
+				Questions: []*Question{
+					{Name: strings.Repeat("0", 64)},
+				},
+			},
+			Err: true,
+		},
+		{
+			Name: "Invalid record",
+			Input: &Message{
+				Records: []*Record{
+					{Name: strings.Repeat("0", 64)},
+				},
+			},
+			Err: true,
+		},
+	} {
+		t.Run(v.Name, func(t *testing.T) {
+			b, err := v.Input.Serialize()
+			compare.Compare(t, reflect.DeepEqual(b, v.Output), true, true)
+			compare.Compare(t, err != nil, v.Err, true)
+		})
+	}
 }
 
 func TestParseMessage(t *testing.T) {
