@@ -95,6 +95,16 @@ func TestRecordString(t *testing.T) {
 	compare.Compare(
 		t,
 		(&Record{
+			Name:           "x.",
+			Type:           TypeNSEC,
+			NextDomainName: "y.",
+		}).String(),
+		"NSEC x. y.",
+		true,
+	)
+	compare.Compare(
+		t,
+		(&Record{
 			Name: "x.",
 		}).String(),
 		"?? x.",
@@ -205,6 +215,24 @@ func TestRecordSerialize(t *testing.T) {
 			},
 		},
 		{
+			Name: "Valid NSEC record",
+			Input: &Record{
+				Name:           "x",
+				Type:           TypeNSEC,
+				NextDomainName: "y",
+				Bitmap:         []byte{0x40},
+			},
+			Output: []byte{
+				1, 'x', 0,
+				0, 47,
+				0, 0,
+				0, 0, 0, 0,
+				0, 6,
+				1, 'y', 0,
+				0, 1, 0x40,
+			},
+		},
+		{
 			Name: "Invalid PTR record",
 			Input: &Record{
 				Type:   TypePTR,
@@ -225,6 +253,14 @@ func TestRecordSerialize(t *testing.T) {
 			Input: &Record{
 				Type:   TypeSRV,
 				Target: strings.Repeat("0", 64),
+			},
+			Err: true,
+		},
+		{
+			Name: "Invalid NSEC record",
+			Input: &Record{
+				Type:           TypeNSEC,
+				NextDomainName: strings.Repeat("0", 64),
 			},
 			Err: true,
 		},

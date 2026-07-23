@@ -87,6 +87,12 @@ func (r *Record) String() string {
 			r.Port,
 			r.Target,
 		)
+	case TypeNSEC:
+		return fmt.Sprintf(
+			"%s %s",
+			v,
+			r.NextDomainName,
+		)
 	default:
 		return v
 	}
@@ -140,6 +146,17 @@ func (r *Record) serialize() ([]byte, error) {
 		b.Write(n)
 	case TypeAAAA:
 		binary.Write(b, binary.BigEndian, r.Address.As16())
+	case TypeNSEC:
+		n, err := serializeName(r.NextDomainName)
+		if err != nil {
+			return nil, err
+		}
+		b.Write(n)
+		fields := &recordNSECFields{
+			Length: uint8(len(r.Bitmap)),
+		}
+		binary.Write(b, binary.BigEndian, fields)
+		b.Write(r.Bitmap)
 	default:
 		return nil, errSerializingRecord
 	}
