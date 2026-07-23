@@ -355,6 +355,25 @@ func TestParseRecord(t *testing.T) {
 			EndOffset: 29,
 		},
 		{
+			Name: "Valid NSEC record",
+			Input: []byte{
+				1, 'x', 0,
+				0, 47,
+				0, 0,
+				0, 0, 0, 0,
+				0, 6,
+				1, 'y', 0,
+				0, 1, 0x40,
+			},
+			Output: &Record{
+				Name:           "x.",
+				Type:           TypeNSEC,
+				NextDomainName: "y.",
+				Bitmap:         []byte{0x40},
+			},
+			EndOffset: 0,
+		},
+		{
 			Name: "Truncated (after name)",
 			Input: []byte{
 				1, 'x', 0,
@@ -439,6 +458,42 @@ func TestParseRecord(t *testing.T) {
 				0, 0,
 				0, 0, 0, 0,
 				0, 0,
+			},
+			Err: true,
+		},
+		{
+			Name: "Invalid NSEC record (bad name)",
+			Input: []byte{
+				1, 'x', 0,
+				0, 47,
+				0, 0,
+				0, 0, 0, 0,
+				0, 1,
+			},
+			Err: true,
+		},
+		{
+			Name: "Invalid NSEC record (missing fields)",
+			Input: []byte{
+				1, 'x', 0,
+				0, 47,
+				0, 0,
+				0, 0, 0, 0,
+				0, 3,
+				1, 'y', 0,
+			},
+			Err: true,
+		},
+		{
+			Name: "Invalid NSEC record (bad length)",
+			Input: []byte{
+				1, 'x', 0,
+				0, 47,
+				0, 0,
+				0, 0, 0, 0,
+				0, 5,
+				1, 'y', 0,
+				0, 1,
 			},
 			Err: true,
 		},

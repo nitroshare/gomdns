@@ -28,19 +28,26 @@ type recordSRVFields struct {
 	Port     uint16
 }
 
+type recordNSECFields struct {
+	Number uint8
+	Length uint8
+}
+
 // Record represents an answer to a DNS query. Not all fields are used by each
 // type of record, though the first four fields are common to all records.
 type Record struct {
-	Name       string
-	Type       uint16
-	FlushCache bool
-	Ttl        uint32
-	Address    netip.Addr
-	Target     string
-	Attributes []string
-	Priority   uint16
-	Weight     uint16
-	Port       uint16
+	Name           string
+	Type           uint16
+	FlushCache     bool
+	Ttl            uint32
+	Address        netip.Addr
+	Target         string
+	Attributes     []string
+	Priority       uint16
+	Weight         uint16
+	Port           uint16
+	NextDomainName string
+	Bitmap         []byte
 }
 
 // SameNameAndType returns true if the records are for the same name and type.
@@ -217,6 +224,22 @@ func parseRecord(data []byte, offset *int) (*Record, error) {
 		}
 		*offset += n
 		r.Address = netip.AddrFrom16(v)
+	case TypeNSEC:
+		v, err := parseName(data, offset)
+		if err != nil {
+			return nil, err
+		}
+		r.NextDomainName = v
+		var fields recordNSECFields
+		n, err := binary.Decode(data[*offset:], binary.BigEndian, &fields)
+		if err != nil {
+			return nil, err
+		}
+		*offset += n
+		if fields.Number != 0 || *offset+int(fields.Length) > len(data) {
+			return nil, errParsingRecord
+		}
+		r.Bitmap = data[*offset : *offset+int(fields.Length)]
 	}
 	*offset = offsetStart + int(fields.DataLen)
 	if *offset > len(data) {
