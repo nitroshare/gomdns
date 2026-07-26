@@ -14,6 +14,9 @@ type MockInterface struct {
 	// MockAddrs contains a list of mocked addresses.
 	MockAddrs []net.Addr
 
+	// MockAddrsError contains the error to be returned by Addrs().
+	MockAddrsError error
+
 	// MockFlags contains mocked flags.
 	MockFlags net.Flags
 
@@ -103,7 +106,7 @@ func NewMockInterface() *MockInterface {
 }
 
 func (m *MockInterface) Addrs() ([]net.Addr, error) {
-	return m.MockAddrs, nil
+	return m.MockAddrs, m.MockAddrsError
 }
 
 func (m *MockInterface) Flags() net.Flags {
