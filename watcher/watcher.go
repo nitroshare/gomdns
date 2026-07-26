@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/nitroshare/gomdns/multicast"
-	"github.com/nitroshare/gotime"
+	"github.com/nitroshare/gomdns/vtime"
 )
 
 // Watcher monitors available network interfaces and notifies when one is
@@ -51,7 +51,7 @@ func (w *Watcher) run(interval time.Duration) {
 	defer close(w.chanClosed)
 	defer close(w.chanRemoved)
 	defer close(w.chanAdded)
-	t := gotime.NewTicker(interval)
+	t := vtime.NewTicker(interval)
 	defer t.Stop()
 	m := w.diff(map[string]multicast.Interface{})
 	for {

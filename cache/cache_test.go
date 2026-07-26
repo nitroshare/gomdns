@@ -7,7 +7,6 @@ import (
 	"github.com/nitroshare/gomdns/compare"
 	"github.com/nitroshare/gomdns/dns"
 	"github.com/nitroshare/gomdns/vtime"
-	"github.com/nitroshare/gotime"
 )
 
 const (
@@ -62,8 +61,8 @@ func TestLookup(t *testing.T) {
 }
 
 func TestFlush(t *testing.T) {
-	gotime.Mock()
-	defer gotime.Unmock()
+	vtime.Mock()
+	defer vtime.Unmock()
 	c := New(&Config{})
 	defer c.Close()
 	chanExpired := c.Expired.Subscribe()
