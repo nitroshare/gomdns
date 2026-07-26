@@ -39,7 +39,6 @@ func TestListenerRead(t *testing.T) {
 		i    = NewMockInterface()
 		l, _ = NewListener("udp4", i, testUDPAddr)
 	)
-	defer l.Close()
 	t.Run("test successful read", func(t *testing.T) {
 		i.QueueForRead(testPacket)
 		p, err := l.Read()
@@ -47,8 +46,8 @@ func TestListenerRead(t *testing.T) {
 		compare.Compare(t, string(p.Data), string(testUDPData), true)
 		compare.Compare(t, err, nil, true)
 	})
-	t.Run("test unsuccessful read", func(t *testing.T) {
-		i.errOnNextRead = true
+	l.Close()
+	t.Run("test read after close", func(t *testing.T) {
 		p, err := l.Read()
 		compare.Compare(t, p, nil, true)
 		compare.Compare(t, err, net.ErrClosed, true)
