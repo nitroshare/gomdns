@@ -8,8 +8,17 @@ import (
 	"github.com/nitroshare/gomdns/compare"
 )
 
-func TestNetInterface(t *testing.T) {
-	compare.Compare(t, netInterface{}.Interface(), nil, true)
+func TestNetInterfaceMethods(t *testing.T) {
+	i := netInterface{
+		i: &net.Interface{},
+	}
+
+	// Invoke these, but we can't really inspect the return values since the
+	// net.Interface we constructed is invalid
+
+	i.Addrs()
+	i.Flags()
+	i.Interface()
 }
 
 func TestInterfaces(t *testing.T) {
@@ -23,6 +32,14 @@ func TestInterfacesError(t *testing.T) {
 	defer func() { origNetInterfaces = net.Interfaces }()
 	_, err := Interfaces()
 	compare.Compare(t, err, errTest, true)
+}
+
+func TestMockInterfacesWithError(t *testing.T) {
+	MockWithError()
+	defer Unmock()
+	i, err := Interfaces()
+	compare.Compare(t, i == nil, true, true)
+	compare.Compare(t, err != nil, true, true)
 }
 
 func TestAddClearMockInterface(t *testing.T) {

@@ -12,8 +12,14 @@ var (
 	testData          = []byte("test")
 )
 
-func TestMockInterfaceInterface(t *testing.T) {
-	NewMockInterface().Interface()
+func TestMockInterfaceMethods(t *testing.T) {
+	i := NewMockInterface()
+	_, err := i.Addrs()
+	if err != nil {
+		t.Fatal(err)
+	}
+	i.Flags()
+	i.Interface()
 }
 
 func TestMockInterfaceQueueForRead(t *testing.T) {
