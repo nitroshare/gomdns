@@ -3,15 +3,15 @@ package server
 import (
 	"testing"
 
-	"github.com/nitroshare/gomulticast"
-	"github.com/nitroshare/gotime"
+	"github.com/nitroshare/gomdns/multicast"
+	"github.com/nitroshare/gomdns/vtime"
 )
 
-func TestServer(t *testing.T) {
-	gotime.Mock()
-	defer gotime.Unmock()
-	gomulticast.Mock()
-	defer gomulticast.Unmock()
-	s := New()
+func TestServerSendAll(t *testing.T) {
+	vtime.Mock()
+	defer vtime.Unmock()
+	multicast.Mock()
+	defer multicast.Unmock()
+	s := New(&Config{})
 	defer s.Close()
 }
