@@ -6,7 +6,7 @@ import (
 
 	"github.com/nitroshare/gomdns/broadcaster"
 	"github.com/nitroshare/gomdns/dns"
-	"github.com/nitroshare/gomdns/util/list"
+	"github.com/nitroshare/gomdns/list"
 )
 
 type cacheLookup struct {

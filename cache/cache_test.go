@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/nitroshare/gomdns/compare"
 	"github.com/nitroshare/gomdns/dns"
-	"github.com/nitroshare/gomdns/util/compare"
-	"github.com/nitroshare/gomdns/util/vtime"
+	"github.com/nitroshare/gomdns/vtime"
 	"github.com/nitroshare/gotime"
 )
 

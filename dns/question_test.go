@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nitroshare/gomdns/util/compare"
+	"github.com/nitroshare/gomdns/compare"
 )
 
 func TestQuestionString(t *testing.T) {

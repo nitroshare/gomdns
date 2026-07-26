@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nitroshare/gomdns/util/compare"
+	"github.com/nitroshare/gomdns/compare"
 )
 
 func TestUnmockedTimer(t *testing.T) {

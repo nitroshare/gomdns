@@ -3,7 +3,7 @@ package vtime
 import (
 	"time"
 
-	"github.com/nitroshare/gomdns/util/list"
+	"github.com/nitroshare/gomdns/list"
 )
 
 type afterChanData struct {

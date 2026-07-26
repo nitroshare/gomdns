@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/nitroshare/gomdns/dns"
-	"github.com/nitroshare/gomdns/util/list"
-	"github.com/nitroshare/gomdns/util/vtime"
+	"github.com/nitroshare/gomdns/list"
+	"github.com/nitroshare/gomdns/vtime"
 )
 
 func (c *Cache) nextTrigger() <-chan time.Time {
