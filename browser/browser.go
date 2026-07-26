@@ -46,7 +46,7 @@ func New(cfg *Config) *Browser {
 		b.cacheClose = true
 	}
 	if b.server == nil {
-		b.server = server.New()
+		b.server = server.New(&server.Config{})
 		b.serverClose = true
 	}
 	if b.logger == nil {
