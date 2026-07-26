@@ -4,8 +4,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/nitroshare/compare"
 	"github.com/nitroshare/gomdns/dns"
+	"github.com/nitroshare/gomdns/util/compare"
+	"github.com/nitroshare/gomdns/util/vtime"
 	"github.com/nitroshare/gotime"
 )
 
@@ -24,29 +25,26 @@ var (
 )
 
 func TestQueryAndExpiry(t *testing.T) {
-	gotime.Mock()
-	defer gotime.Unmock()
-	var (
-		chanQuery   = make(chan *dns.Record)
-		chanExpired = make(chan *dns.Record)
-		c           = New(&Config{
-			ChanQuery:   chanQuery,
-			ChanExpired: chanExpired,
-		})
-	)
+	vtime.Mock()
+	defer vtime.Unmock()
+	c := New(&Config{})
 	defer c.Close()
+	var (
+		chanQuery   = c.Query.Subscribe()
+		chanExpired = c.Expired.Subscribe()
+	)
 	c.Add(testRecord)
 	for range 4 {
-		gotime.AdvanceToAfter()
+		vtime.AdvanceToAfter()
 		<-chanQuery
 	}
-	gotime.AdvanceToAfter()
+	vtime.AdvanceToAfter()
 	<-chanExpired
 }
 
 func TestLookup(t *testing.T) {
-	gotime.Mock()
-	defer gotime.Unmock()
+	vtime.Mock()
+	defer vtime.Unmock()
 	c := New(&Config{})
 	defer c.Close()
 	for range 2 {
@@ -66,13 +64,9 @@ func TestLookup(t *testing.T) {
 func TestFlush(t *testing.T) {
 	gotime.Mock()
 	defer gotime.Unmock()
-	var (
-		chanExpired = make(chan *dns.Record)
-		c           = New(&Config{
-			ChanExpired: chanExpired,
-		})
-	)
+	c := New(&Config{})
 	defer c.Close()
+	chanExpired := c.Expired.Subscribe()
 	c.Add(testRecord)
 	go c.Add(&dns.Record{
 		Name:       testName,
@@ -89,24 +83,4 @@ func TestFlush(t *testing.T) {
 		true,
 		true,
 	)
-}
-
-func TestNonBlockingSend(t *testing.T) {
-	gotime.Mock()
-	defer gotime.Unmock()
-	var (
-		chanQuery   = make(chan *dns.Record)
-		chanExpired = make(chan *dns.Record)
-		c           = New(&Config{
-			ChanQuery:   chanQuery,
-			ChanExpired: chanExpired,
-		})
-	)
-	defer func() { <-chanQuery }()
-	defer c.Close()
-	c.Add(testRecord)
-	for range 5 {
-		gotime.AdvanceToAfter()
-	}
-	<-chanExpired
 }

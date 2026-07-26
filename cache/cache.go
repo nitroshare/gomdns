@@ -2,34 +2,33 @@ package cache
 
 import (
 	"log/slog"
-	"sync"
 	"time"
 
-	"github.com/nitroshare/golist"
+	"github.com/nitroshare/gomdns/broadcaster"
 	"github.com/nitroshare/gomdns/dns"
+	"github.com/nitroshare/gomdns/util/list"
 )
 
-type recordEntry struct {
-	record   *dns.Record
-	triggers *golist.List[time.Time]
+type cacheLookup struct {
+	Name string
+	Type uint16
 }
 
-type lookupParams struct {
-	name  string
-	_type uint16
+type cacheEntry struct {
+	Record   *dns.Record
+	Triggers *list.List[time.Time]
 }
 
-// Cache stores records received from DNS queries and sends on the
-// shouldQuery channel when records are about to expire.
+// Cache stores records received from DNS queries and indicates when they
+// should be queried again or when they expire.
 type Cache struct {
-	wg            sync.WaitGroup
+	Query         *broadcaster.Broadcaster[*dns.Record]
+	Expired       *broadcaster.Broadcaster[*dns.Record]
 	logger        *slog.Logger
-	entries       *golist.List[*recordEntry]
-	chanQuery     chan<- *dns.Record
-	chanExpired   chan<- *dns.Record
+	entries       list.List[*cacheEntry]
 	chanAdd       chan *dns.Record
 	chanAddRet    chan any
-	chanLookup    chan *lookupParams
+	chanLookup    chan *cacheLookup
 	chanLookupRet chan []*dns.Record
 	chanClose     chan any
 	chanClosed    chan any
@@ -43,24 +42,23 @@ func (c *Cache) run() {
 		case r := <-c.chanAdd:
 			c.add(r)
 			c.chanAddRet <- nil
-		case p := <-c.chanLookup:
-			c.chanLookupRet <- c.lookup(p.name, p._type)
+		case l := <-c.chanLookup:
+			c.chanLookupRet <- c.lookup(l)
 		case <-c.chanClose:
 			return
 		}
 	}
 }
 
-// New returns a new Cache instance.
+// New returns a new Cache.
 func New(cfg *Config) *Cache {
 	c := &Cache{
+		Query:         broadcaster.New[*dns.Record](),
+		Expired:       broadcaster.New[*dns.Record](),
 		logger:        cfg.Logger,
-		entries:       &golist.List[*recordEntry]{},
-		chanQuery:     cfg.ChanQuery,
-		chanExpired:   cfg.ChanExpired,
 		chanAdd:       make(chan *dns.Record),
 		chanAddRet:    make(chan any),
-		chanLookup:    make(chan *lookupParams),
+		chanLookup:    make(chan *cacheLookup),
 		chanLookupRet: make(chan []*dns.Record),
 		chanClose:     make(chan any),
 		chanClosed:    make(chan any),
@@ -73,7 +71,7 @@ func New(cfg *Config) *Cache {
 	return c
 }
 
-// Add adds a record to the cache.
+// Add inserts or updates a record in the cache.
 func (c *Cache) Add(record *dns.Record) {
 	c.chanAdd <- record
 	<-c.chanAddRet
@@ -81,9 +79,9 @@ func (c *Cache) Add(record *dns.Record) {
 
 // Lookup returns all records of the specified type for the provided name.
 func (c *Cache) Lookup(name string, _type uint16) []*dns.Record {
-	c.chanLookup <- &lookupParams{
-		name:  name,
-		_type: _type,
+	c.chanLookup <- &cacheLookup{
+		Name: name,
+		Type: _type,
 	}
 	return <-c.chanLookupRet
 }
@@ -92,11 +90,6 @@ func (c *Cache) Lookup(name string, _type uint16) []*dns.Record {
 func (c *Cache) Close() {
 	close(c.chanClose)
 	<-c.chanClosed
-	c.wg.Wait()
-	if c.chanQuery != nil {
-		close(c.chanQuery)
-	}
-	if c.chanExpired != nil {
-		close(c.chanExpired)
-	}
+	c.Query.Close()
+	c.Expired.Close()
 }

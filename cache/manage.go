@@ -4,36 +4,20 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/nitroshare/golist"
 	"github.com/nitroshare/gomdns/dns"
-	"github.com/nitroshare/gotime"
+	"github.com/nitroshare/gomdns/util/list"
+	"github.com/nitroshare/gomdns/util/vtime"
 )
 
-func (c *Cache) send(ch chan<- *dns.Record, r *dns.Record) {
-	c.wg.Add(1)
-	go func() {
-		defer c.wg.Done()
-		select {
-		case ch <- r:
-		case <-c.chanClose:
-		}
-	}()
-}
-
 func (c *Cache) nextTrigger() <-chan time.Time {
-
 	var (
-		n           = gotime.Now()
+		n           = vtime.Now()
 		nextTrigger time.Time
 	)
-
-	// Enumerate all of the records
 	for e := c.entries.Front; e != nil; e = e.Next {
-
-		// Check for elapsed triggers
 		var (
 			shouldQuery = false
-			triggers    = e.Value.triggers
+			triggers    = e.Value.Triggers
 		)
 		for e := triggers.Front; e != nil; e = e.Next {
 			if !e.Value.After(n) {
@@ -41,106 +25,75 @@ func (c *Cache) nextTrigger() <-chan time.Time {
 				triggers.Remove(e)
 			}
 		}
-
-		// If there are no triggers, the record has expired
 		if triggers.Len == 0 {
 			c.entries.Remove(e)
-			r := e.Value.record
+			r := e.Value.Record
 			c.logger.Debug(
 				"record expired",
 				slog.String("record", r.String()),
 			)
-			if c.chanExpired != nil {
-				c.send(c.chanExpired, r)
-			}
+			c.Expired.Send(r)
 			continue
 		}
-
-		// Find the earliest trigger
 		if nextTrigger.IsZero() || triggers.Front.Value.Before(nextTrigger) {
 			nextTrigger = triggers.Front.Value
 		}
-
-		// If one of the triggers elapsed, a query is needed
-		if shouldQuery && c.chanQuery != nil {
-			c.send(c.chanQuery, e.Value.record)
+		if shouldQuery {
+			c.Query.Send(e.Value.Record)
 		}
 	}
-
-	// If no records with triggers exist, return nil
 	if nextTrigger.IsZero() {
 		return nil
 	}
-
-	// Otherwise, return a channel that sends for the next one
-	return gotime.After(nextTrigger.Sub(n))
+	return vtime.After(nextTrigger.Sub(n))
 }
 
 func (c *Cache) add(r *dns.Record) {
-
-	// Remove old records that are:
-	// - of the same name/type and flush cache is set
-	// - identical and TTL is set to 0
-	// (Note that identical records are removed below even if TTL is set to 0;
-	// this is to prevent a duplicate when the updated record is added again.)
 	for e := c.entries.Front; e != nil; e = e.Next {
 		var (
-			sameNameType = e.Value.record.SameNameAndType(r)
-			sameRecord   = e.Value.record.SameRecord(r)
+			sameNameType = e.Value.Record.SameNameAndType(r)
+			sameRecord   = e.Value.Record.SameRecord(r)
 		)
 		if sameNameType && r.FlushCache || sameRecord {
 			c.entries.Remove(e)
 			if r.Ttl == 0 || !sameRecord {
-				r := e.Value.record
+				r := e.Value.Record
 				c.logger.Debug(
 					"removed record",
 					slog.String("record", r.String()),
 				)
-				if c.chanExpired != nil {
-					c.send(c.chanExpired, r)
-				}
+				c.Expired.Send(r)
 			}
 		}
 	}
-
-	// If the record is being removed, nothing more needs to be done
 	if r.Ttl == 0 {
 		return
 	}
-
-	// Log the new record
 	c.logger.Debug(
 		"added / updated record",
 		slog.String("record", r.String()),
 	)
-
 	var (
-		n        = gotime.Now()
-		triggers = &golist.List[time.Time]{}
+		n        = vtime.Now()
+		triggers = &list.List[time.Time]{}
 	)
-
-	// Determine the triggers for re-querying the record (if requested)
-	if c.chanQuery != nil {
-		triggers.Add(n.Add(time.Duration(r.Ttl) * 500 * time.Millisecond))
-		triggers.Add(n.Add(time.Duration(r.Ttl) * 850 * time.Millisecond))
-		triggers.Add(n.Add(time.Duration(r.Ttl) * 900 * time.Millisecond))
-		triggers.Add(n.Add(time.Duration(r.Ttl) * 950 * time.Millisecond))
-	}
+	triggers.Add(n.Add(time.Duration(r.Ttl) * 500 * time.Millisecond))
+	triggers.Add(n.Add(time.Duration(r.Ttl) * 850 * time.Millisecond))
+	triggers.Add(n.Add(time.Duration(r.Ttl) * 900 * time.Millisecond))
+	triggers.Add(n.Add(time.Duration(r.Ttl) * 950 * time.Millisecond))
 	triggers.Add(n.Add(time.Duration(r.Ttl) * time.Second))
-
-	// Add the entry to the list of entries
-	c.entries.Add(&recordEntry{
-		record:   r,
-		triggers: triggers,
+	c.entries.Add(&cacheEntry{
+		Record:   r,
+		Triggers: triggers,
 	})
 }
 
-func (c *Cache) lookup(name string, _type uint16) []*dns.Record {
+func (c *Cache) lookup(l *cacheLookup) []*dns.Record {
 	records := []*dns.Record{}
 	for e := c.entries.Front; e != nil; e = e.Next {
-		if e.Value.record.Name == name &&
-			e.Value.record.Type == _type {
-			records = append(records, e.Value.record)
+		if e.Value.Record.Name == l.Name &&
+			e.Value.Record.Type == l.Type {
+			records = append(records, e.Value.Record)
 		}
 	}
 	return records
