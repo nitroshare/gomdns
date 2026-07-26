@@ -70,8 +70,8 @@ func (w *Watcher) run(interval time.Duration) {
 	}
 }
 
-// NewWatcher creates a new Watcher instance.
-func NewWatcher(cfg *Config) *Watcher {
+// New creates a new Watcher instance.
+func New(cfg *Config) *Watcher {
 	w := &Watcher{
 		chanAdded:   cfg.ChanAdded,
 		chanRemoved: cfg.ChanRemoved,

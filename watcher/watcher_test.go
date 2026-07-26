@@ -22,7 +22,7 @@ func newWatcherSet() *watcherSet {
 	return &watcherSet{
 		chanAdded:   chanAdded,
 		chanRemoved: chanRemoved,
-		watcher: NewWatcher(&Config{
+		watcher: New(&Config{
 			Interval:    time.Second,
 			ChanAdded:   chanAdded,
 			ChanRemoved: chanRemoved,
