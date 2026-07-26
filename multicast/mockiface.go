@@ -10,6 +10,13 @@ import (
 // receiving packets on the interface. Only one Listener should be created
 // for each MockInterface.
 type MockInterface struct {
+
+	// MockAddrs contains a list of mocked addresses.
+	MockAddrs []net.Addr
+
+	// MockFlags contains mocked flags.
+	MockFlags net.Flags
+
 	chanQueueForRead    chan *Packet
 	chanQueueForReadRet chan any
 	chanReadRequest     chan any
@@ -96,11 +103,17 @@ func NewMockInterface() *MockInterface {
 	return m
 }
 
-func (m MockInterface) Interface() *net.Interface {
+func (m *MockInterface) Addrs() ([]net.Addr, error) {
+	return m.MockAddrs, nil
+}
+
+func (m *MockInterface) Flags() net.Flags {
+	return m.MockFlags
+}
+
+func (m *MockInterface) Interface() *net.Interface {
 	return &net.Interface{
-		MTU:   1500,
-		Name:  "MockInterface",
-		Flags: net.FlagUp & net.FlagRunning & net.FlagMulticast,
+		MTU: 1500,
 	}
 }
 

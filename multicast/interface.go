@@ -9,6 +9,12 @@ import (
 // easier mocking.
 type Interface interface {
 
+	// Addrs returns the addresses on the interface.
+	Addrs() ([]net.Addr, error)
+
+	// Flags returns the flags on the interface.
+	Flags() net.Flags
+
 	// Interface returns the underlying net.Interface.
 	Interface() *net.Interface
 }
@@ -17,7 +23,9 @@ type netInterface struct {
 	i *net.Interface
 }
 
-func (n netInterface) Interface() *net.Interface { return n.i }
+func (n netInterface) Addrs() ([]net.Addr, error) { return n.i.Addrs() }
+func (n netInterface) Flags() net.Flags           { return n.i.Flags }
+func (n netInterface) Interface() *net.Interface  { return n.i }
 
 // Packet represents a packet sent or received.
 type Packet struct {
