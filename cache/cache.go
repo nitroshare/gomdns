@@ -22,8 +22,14 @@ type cacheEntry struct {
 // Cache stores records received from DNS queries and indicates when they
 // should be queried again or when they expire.
 type Cache struct {
-	Query         *broadcaster.Broadcaster[*dns.Record]
-	Expired       *broadcaster.Broadcaster[*dns.Record]
+
+	// Query sends when a record ought to be queried again, based on its TTL.
+	Query *broadcaster.Broadcaster[*dns.Record]
+
+	// Expired sends when a record is no longer valid, either due to expiry or
+	// receiving an identical record with a TTL of 0.
+	Expired *broadcaster.Broadcaster[*dns.Record]
+
 	logger        *slog.Logger
 	entries       list.List[*cacheEntry]
 	chanAdd       chan *dns.Record
