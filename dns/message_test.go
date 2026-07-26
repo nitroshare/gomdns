@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nitroshare/compare"
+	"github.com/nitroshare/gomdns/util/compare"
 )
 
 func TestMessageString(t *testing.T) {

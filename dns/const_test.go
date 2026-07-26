@@ -1,6 +1,8 @@
 package dns
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestTypeToString(t *testing.T) {
 	for _, v := range []uint16{

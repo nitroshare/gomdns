@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nitroshare/compare"
+	"github.com/nitroshare/gomdns/util/compare"
 )
 
 func TestSerializeName(t *testing.T) {
