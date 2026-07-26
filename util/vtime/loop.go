@@ -3,7 +3,7 @@ package vtime
 import (
 	"time"
 
-	"github.com/nitroshare/golist"
+	"github.com/nitroshare/gomdns/util/list"
 )
 
 type afterChanData struct {
@@ -20,7 +20,7 @@ type resetTimerParams struct {
 type mockLoop struct {
 	mockTime           time.Time
 	waitingForAfter    bool
-	afterChan          golist.List[*afterChanData]
+	afterChan          list.List[*afterChanData]
 	chanNow            chan any
 	chanAfter          chan time.Duration
 	chanSet            chan time.Time
@@ -150,7 +150,7 @@ func (m *mockLoop) run() {
 
 func newMockLoop() *mockLoop {
 	m := &mockLoop{
-		afterChan:          golist.List[*afterChanData]{},
+		afterChan:          list.List[*afterChanData]{},
 		chanNow:            make(chan any),
 		chanAfter:          make(chan time.Duration),
 		chanSet:            make(chan time.Time),

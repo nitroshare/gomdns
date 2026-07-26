@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nitroshare/compare"
+	"github.com/nitroshare/gomdns/util/compare"
 )
 
 func TestMockUnmock(t *testing.T) {

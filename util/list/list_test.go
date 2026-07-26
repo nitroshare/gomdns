@@ -3,7 +3,7 @@ package list
 import (
 	"testing"
 
-	"github.com/nitroshare/compare"
+	"github.com/nitroshare/gomdns/util/compare"
 )
 
 const (
