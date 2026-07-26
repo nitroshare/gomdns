@@ -14,7 +14,7 @@ func TestMockUnmock(t *testing.T) {
 	compare.CompareFn(t, listenMulticastUDP, mockListenMulticastUDP, true)
 	MockWithError()
 	compare.CompareFn(t, Interfaces, mockInterfacesWithError, true)
-	compare.CompareFn(t, listenMulticastUDP, mockListenMulticastUDPWithError, true)
+	compare.CompareFn(t, listenMulticastUDP, mockListenMulticastUDP, true)
 	Unmock()
 	compare.CompareFn(t, Interfaces, netInterfaces, true)
 	compare.CompareFn(t, listenMulticastUDP, netListenMulticastUDP, true)

@@ -15,11 +15,11 @@ func Mock() {
 	listenMulticastUDP = mockListenMulticastUDP
 }
 
-// MockWithError replaces all internal functions with equivalents that throw
-// errors when invoked.
+// MockWithError replaces Interfaces with an equivalent that throws an error
+// when invoked.
 func MockWithError() {
 	Interfaces = mockInterfacesWithError
-	listenMulticastUDP = mockListenMulticastUDPWithError
+	listenMulticastUDP = mockListenMulticastUDP
 }
 
 // Unmock undoes the actions of Mock.
