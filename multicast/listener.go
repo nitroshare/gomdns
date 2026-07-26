@@ -1,6 +1,7 @@
 package multicast
 
 import (
+	"errors"
 	"net"
 )
 
@@ -32,6 +33,14 @@ func mockListenMulticastUDP(
 	addr *net.UDPAddr,
 ) (udpConn, error) {
 	return &mockUDPConn{i.(*MockInterface)}, nil
+}
+
+func mockListenMulticastUDPWithError(
+	network string,
+	i Interface,
+	addr *net.UDPAddr,
+) (udpConn, error) {
+	return nil, errors.New("mocked error")
 }
 
 // Listener provides a simple interface for sending and receiving UDP packets

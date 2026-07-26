@@ -1,6 +1,7 @@
 package multicast
 
 import (
+	"errors"
 	"net"
 )
 
@@ -49,6 +50,10 @@ var (
 
 func mockInterfaces() ([]Interface, error) {
 	return mInterfaces, nil
+}
+
+func mockInterfacesWithError() ([]Interface, error) {
+	return nil, errors.New("mocked error")
 }
 
 // AddMockInterface adds a MockInterface to the list returned by Interfaces
