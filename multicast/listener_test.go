@@ -5,7 +5,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/nitroshare/compare"
+	"github.com/nitroshare/gomdns/compare"
 )
 
 var (

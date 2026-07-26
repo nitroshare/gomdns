@@ -3,7 +3,7 @@ package broadcaster
 import (
 	"testing"
 
-	"github.com/nitroshare/compare"
+	"github.com/nitroshare/gomdns/compare"
 )
 
 func TestBroadcaster(t *testing.T) {
