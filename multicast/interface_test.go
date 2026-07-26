@@ -25,10 +25,13 @@ func TestInterfacesError(t *testing.T) {
 	compare.Compare(t, err, errTest, true)
 }
 
-func TestAddMockedInterface(t *testing.T) {
+func TestAddClearMockInterface(t *testing.T) {
 	i, _ := mockInterfaces()
 	compare.Compare(t, len(i), 0, true)
 	AddMockInterface(&MockInterface{})
 	i, _ = mockInterfaces()
 	compare.Compare(t, len(i), 1, true)
+	ClearMockInterfaces()
+	i, _ = mockInterfaces()
+	compare.Compare(t, len(i), 0, true)
 }

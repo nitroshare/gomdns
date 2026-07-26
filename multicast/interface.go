@@ -56,3 +56,8 @@ func mockInterfaces() ([]Interface, error) {
 func AddMockInterface(i *MockInterface) {
 	mInterfaces = append(mInterfaces, i)
 }
+
+// ClearMockInterfaces removes all mocked interfaces.
+func ClearMockInterfaces() {
+	mInterfaces = []Interface{}
+}
