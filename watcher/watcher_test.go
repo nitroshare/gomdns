@@ -75,12 +75,13 @@ func TestCloseDuringSend(t *testing.T) {
 	})
 
 	t.Run("chanRemoved", func(t *testing.T) {
+		syncTicker.Activate()
+		defer syncTicker.Deactivate()
 		s := newWatcherSet()
 		defer s.watcher.Close()
 		<-s.chanAdded
 		vnet.ClearInterfaces()
-		s.watcher.chanTest = make(chan any)
 		vtime.Advance(2 * time.Second)
-		<-s.watcher.chanTest
+		syncTicker.Wait()
 	})
 }

@@ -3,14 +3,18 @@ package watcher
 import (
 	"time"
 
+	"github.com/nitroshare/gomdns/syncpoint"
 	"github.com/nitroshare/gomdns/vnet"
 	"github.com/nitroshare/gomdns/vtime"
+)
+
+var (
+	syncTicker = syncpoint.New()
 )
 
 // Watcher monitors available network interfaces and notifies when one is
 // added or removed.
 type Watcher struct {
-	chanTest    chan any
 	chanAdded   chan<- vnet.Interface
 	chanRemoved chan<- vnet.Interface
 	chanClose   chan any
@@ -57,9 +61,7 @@ func (w *Watcher) run(interval time.Duration) {
 	for {
 		select {
 		case <-t.C:
-			if w.chanTest != nil {
-				close(w.chanTest)
-			}
+			syncTicker.Trigger()
 			m = w.diff(m)
 			if m == nil {
 				return
