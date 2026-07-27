@@ -3,7 +3,7 @@ package watcher
 import (
 	"time"
 
-	"github.com/nitroshare/gomdns/multicast"
+	"github.com/nitroshare/gomdns/vnet"
 	"github.com/nitroshare/gomdns/vtime"
 )
 
@@ -11,20 +11,20 @@ import (
 // added or removed.
 type Watcher struct {
 	chanTest    chan any
-	chanAdded   chan<- multicast.Interface
-	chanRemoved chan<- multicast.Interface
+	chanAdded   chan<- vnet.Interface
+	chanRemoved chan<- vnet.Interface
 	chanClose   chan any
 	chanClosed  chan any
 }
 
-func (w *Watcher) diff(m map[string]multicast.Interface) map[string]multicast.Interface {
-	interfaces, err := multicast.Interfaces()
+func (w *Watcher) diff(m map[string]vnet.Interface) map[string]vnet.Interface {
+	interfaces, err := vnet.Interfaces()
 	if err != nil {
 		return m
 	}
-	m2 := map[string]multicast.Interface{}
+	m2 := map[string]vnet.Interface{}
 	for _, i := range interfaces {
-		m2[i.Interface().Name] = i
+		m2[i.Name()] = i
 	}
 	for k, v := range m {
 		if _, ok := m2[k]; !ok {
@@ -53,7 +53,7 @@ func (w *Watcher) run(interval time.Duration) {
 	defer close(w.chanAdded)
 	t := vtime.NewTicker(interval)
 	defer t.Stop()
-	m := w.diff(map[string]multicast.Interface{})
+	m := w.diff(map[string]vnet.Interface{})
 	for {
 		select {
 		case <-t.C:
