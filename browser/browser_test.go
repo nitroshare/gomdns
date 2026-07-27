@@ -3,14 +3,14 @@ package browser
 import (
 	"testing"
 
-	"github.com/nitroshare/gomdns/multicast"
+	"github.com/nitroshare/gomdns/vnet"
 )
 
 func TestBrowser(t *testing.T) {
-	multicast.Mock()
-	defer multicast.Unmock()
-	i := multicast.NewMockInterface()
-	multicast.AddMockInterface(i)
+	vnet.Mock()
+	defer vnet.Unmock()
+	i := vnet.NewMockInterface()
+	vnet.AddInterface(i)
 	syncRun.Activate()
 	defer syncRun.Deactivate()
 	b := New(&Config{})
