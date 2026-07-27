@@ -5,14 +5,15 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/nitroshare/gomdns.svg)](https://pkg.go.dev/github.com/nitroshare/gomdns)
 [![MIT License](https://img.shields.io/badge/license-MIT-9370d8.svg?style=flat)](https://opensource.org/licenses/MIT)
 
-This package aims to provide an [RFC 6762](https://datatracker.ietf.org/doc/html/rfc6762) compliant mDNS package for Go applications, with a heavy focus on simplicity. Although there are existing mDNS packages for Go, each of them lacked something we wanted, leading to the start of this package.
+This package aims to provide an [RFC 6762](https://datatracker.ietf.org/doc/html/rfc6762) compliant mDNS implementation for Go applications, with a heavy focus on simplicity. Although there are existing mDNS packages for Go, each of them lacked something we wanted, leading to the creation of this package.
 
 ### Features
 
+- Exhaustive test suite to ensure compliance & reliability
+- Fully self-contained — no external package dependencies
 - Browser for continuously monitoring other devices providing a service
 - Provider for exposing a local service on the network
-- Ability to easily change parameters without recreating everything
-- Comprehensive test suite to ensure compliance
+- Released under the [MIT license](https://opensource.org/licenses/MIT); completely free to use anywhere
 
 This package is heavily based on [QMdnsEngine](https://github.com/nitroshare/qmdnsengine).
 
