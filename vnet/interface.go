@@ -14,6 +14,7 @@ type Interface interface {
 	// Flags returns the flags on the interface.
 	Flags() net.Flags
 
-	// Interface returns the underlying net.Interface.
-	Interface() *net.Interface
+	// Listen creates a UDPConn that listens for incoming packets at the
+	// provided network and group address.
+	Listen(string, *net.UDPAddr) (UDPConn, error)
 }
