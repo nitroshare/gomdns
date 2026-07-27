@@ -9,12 +9,13 @@ import (
 	"github.com/nitroshare/gomdns/cache"
 	"github.com/nitroshare/gomdns/dns"
 	"github.com/nitroshare/gomdns/multicast"
+	"github.com/nitroshare/gomdns/syncpoint"
 	"github.com/nitroshare/gomdns/watcher"
 )
 
 var (
-	chanTestAdd        chan any
-	chanTestAddSuccess chan any
+	syncAdd        = syncpoint.New()
+	syncAddSuccess = syncpoint.New()
 )
 
 // Server sends and receives packets on the system's multicast interfaces.
@@ -49,18 +50,14 @@ func (s *Server) run() {
 			if !ok {
 				return
 			}
-			if chanTestAdd != nil {
-				chanTestAdd <- nil
-			}
+			syncAdd.Trigger()
 			l, err := newServerListener(s.logger, v, s.chanRecv)
 			if err != nil {
 				s.logger.Warn(err.Error())
 				continue
 			}
 			ifaceMap[v.Interface().Name] = l
-			if chanTestAddSuccess != nil {
-				chanTestAddSuccess <- nil
-			}
+			syncAddSuccess.Trigger()
 		case v, ok := <-s.chanRemoved:
 			if !ok {
 				return

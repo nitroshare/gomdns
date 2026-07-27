@@ -18,12 +18,10 @@ const (
 func TestServer(t *testing.T) {
 	multicast.Mock()
 	defer multicast.Unmock()
-	chanTestAdd = make(chan any)
-	chanTestAddSuccess = make(chan any)
-	defer func() {
-		chanTestAdd = nil
-		chanTestAddSuccess = nil
-	}()
+	syncAdd.Activate()
+	defer syncAdd.Deactivate()
+	syncAddSuccess.Activate()
+	defer syncAddSuccess.Deactivate()
 	for _, v := range []struct {
 		Name           string
 		MockAddrs      []net.Addr
@@ -89,9 +87,9 @@ func TestServer(t *testing.T) {
 			defer multicast.ClearMockInterfaces()
 			s := New(&Config{})
 			defer s.Close()
-			<-chanTestAdd
+			syncAdd.Wait()
 			if v.Success {
-				<-chanTestAddSuccess
+				syncAddSuccess.Wait()
 			}
 		})
 	}
@@ -100,10 +98,8 @@ func TestServer(t *testing.T) {
 func TestServerSendReceive(t *testing.T) {
 	multicast.Mock()
 	defer multicast.Unmock()
-	chanTestAdd = make(chan any)
-	defer func() {
-		chanTestAdd = nil
-	}()
+	syncAdd.Activate()
+	defer syncAdd.Deactivate()
 	i := multicast.NewMockInterface()
 	i.MockAddrs = []net.Addr{
 		&net.IPNet{IP: net.ParseIP("1.2.3.4")},
@@ -113,7 +109,7 @@ func TestServerSendReceive(t *testing.T) {
 	defer multicast.ClearMockInterfaces()
 	s := New(&Config{})
 	defer s.Close()
-	<-chanTestAdd
+	syncAdd.Wait()
 	s.Send(&dns.Message{})
 	p, err := i.DequeueWrite()
 	if err != nil {
