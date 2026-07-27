@@ -35,7 +35,7 @@ func (m *mockUDPConn) run() {
 	for {
 		var (
 			chanDequeue chan *Packet
-			e           = writeQueue.PopFront()
+			e           = writeQueue.Front
 			writePacket *Packet
 		)
 		if e != nil {
