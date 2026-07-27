@@ -3,25 +3,40 @@ package browser
 import (
 	"log/slog"
 
+	"github.com/nitroshare/gomdns/broadcaster"
 	"github.com/nitroshare/gomdns/cache"
+	"github.com/nitroshare/gomdns/dns"
 	"github.com/nitroshare/gomdns/server"
+	"github.com/nitroshare/gomdns/service"
+	"github.com/nitroshare/gomdns/syncpoint"
+)
+
+var (
+	syncRun = syncpoint.New()
 )
 
 // Browser discovers services running on the local network.
 type Browser struct {
-	logger      *slog.Logger
-	cache       *cache.Cache
-	cacheClose  bool
-	server      *server.Server
-	serverClose bool
-	chanClose   chan any
-	chanClosed  chan any
+	Added   *broadcaster.Broadcaster[*service.Service]
+	Removed *broadcaster.Broadcaster[*service.Service]
+
+	logger       *slog.Logger
+	cache        *cache.Cache
+	cacheClose   bool
+	server       *server.Server
+	serverClose  bool
+	chanReceived <-chan *dns.Message
+	chanClose    chan any
+	chanClosed   chan any
 }
 
 func (b *Browser) run() {
 	defer close(b.chanClosed)
 	for {
 		select {
+		case syncRun.TriggerChan() <- nil:
+		case m := <-b.chanReceived:
+			_ = m
 		case <-b.chanClose:
 			return
 		}
@@ -31,6 +46,8 @@ func (b *Browser) run() {
 // New creates a new Browser instance.
 func New(cfg *Config) *Browser {
 	b := &Browser{
+		Added:      broadcaster.New[*service.Service](),
+		Removed:    broadcaster.New[*service.Service](),
 		logger:     cfg.Logger,
 		cache:      cfg.Cache,
 		server:     cfg.Server,
@@ -46,9 +63,12 @@ func New(cfg *Config) *Browser {
 		b.cacheClose = true
 	}
 	if b.server == nil {
-		b.server = server.New(&server.Config{})
+		b.server = server.New(&server.Config{
+			Cache: b.cache,
+		})
 		b.serverClose = true
 	}
+	b.chanReceived = b.server.Received.Subscribe()
 	if b.logger == nil {
 		b.logger = slog.Default()
 	}
@@ -67,4 +87,6 @@ func (b *Browser) Close() {
 	if b.cacheClose {
 		b.cache.Close()
 	}
+	b.Added.Close()
+	b.Removed.Close()
 }
