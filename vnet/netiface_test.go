@@ -15,6 +15,7 @@ func TestNetInterface(t *testing.T) {
 	n := netInterface{
 		i: &net.Interface{},
 	}
+	n.Name()
 	n.Addrs()
 	n.Flags()
 	n.Listen("udp4", nil)

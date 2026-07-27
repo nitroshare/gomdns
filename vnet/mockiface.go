@@ -32,6 +32,7 @@ func NewMockInterface() *MockInterface {
 	}
 }
 
+func (m *MockInterface) Name() string               { return "MockInterface" }
 func (m *MockInterface) Addrs() ([]net.Addr, error) { return m.MockAddrs, m.MockAddrsError }
 func (m *MockInterface) Flags() net.Flags           { return m.MockFlags }
 

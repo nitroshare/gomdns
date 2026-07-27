@@ -8,6 +8,9 @@ import (
 // with net.Interface or through mocked interfaces.
 type Interface interface {
 
+	// Name returns the name of the interface.
+	Name() string
+
 	// Addrs returns the addresses on the interface.
 	Addrs() ([]net.Addr, error)
 
