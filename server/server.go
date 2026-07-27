@@ -8,8 +8,8 @@ import (
 	"github.com/nitroshare/gomdns/broadcaster"
 	"github.com/nitroshare/gomdns/cache"
 	"github.com/nitroshare/gomdns/dns"
-	"github.com/nitroshare/gomdns/multicast"
 	"github.com/nitroshare/gomdns/syncpoint"
+	"github.com/nitroshare/gomdns/vnet"
 	"github.com/nitroshare/gomdns/watcher"
 )
 
@@ -28,8 +28,8 @@ type Server struct {
 	cache       *cache.Cache
 	watcher     *watcher.Watcher
 	once        sync.Once
-	chanAdded   chan multicast.Interface
-	chanRemoved chan multicast.Interface
+	chanAdded   chan vnet.Interface
+	chanRemoved chan vnet.Interface
 	chanRecv    chan *dns.Message
 	chanSend    chan *dns.Message
 	chanSendRet chan any
@@ -56,24 +56,24 @@ func (s *Server) run() {
 				s.logger.Warn(err.Error())
 				continue
 			}
-			ifaceMap[v.Interface().Name] = l
+			ifaceMap[v.Name()] = l
 			syncAddSuccess.Trigger()
 		case v, ok := <-s.chanRemoved:
 			if !ok {
 				return
 			}
-			delete(ifaceMap, v.Interface().Name)
+			delete(ifaceMap, v.Name())
 		case m := <-s.chanRecv:
 			s.Received.Send(m)
 		case m := <-s.chanSend:
 			b, err := m.Serialize()
 			if err == nil {
 				for _, i := range ifaceMap {
-					for _, l := range i.listeners {
-						if _, err := l.Listener.Write(&multicast.Packet{
-							Addr: l.Addr,
-							Data: b,
-						}); err != nil {
+					for _, c := range i.conns {
+						if _, err := c.Conn.WriteTo(
+							b,
+							c.Addr,
+						); err != nil {
 							s.logger.Error(err.Error())
 						}
 					}
@@ -89,8 +89,8 @@ func (s *Server) run() {
 // New creates a new Server instance.
 func New(cfg *Config) *Server {
 	var (
-		chanAdded   = make(chan multicast.Interface)
-		chanRemoved = make(chan multicast.Interface)
+		chanAdded   = make(chan vnet.Interface)
+		chanRemoved = make(chan vnet.Interface)
 		s           = &Server{
 			Received: broadcaster.New[*dns.Message](),
 			logger:   cfg.Logger,

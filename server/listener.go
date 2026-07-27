@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/nitroshare/gomdns/dns"
-	"github.com/nitroshare/gomdns/multicast"
+	"github.com/nitroshare/gomdns/vnet"
 )
 
 var (
@@ -24,28 +24,29 @@ var (
 	}
 )
 
-type serverListenerWithAddr struct {
-	Addr     *net.UDPAddr
-	Listener *multicast.Listener
+type serverConnWithAddr struct {
+	Addr *net.UDPAddr
+	Conn vnet.UDPConn
 }
 
 type serverListener struct {
-	wg        sync.WaitGroup
-	logger    *slog.Logger
-	chanSend  chan<- *dns.Message
-	listeners []*serverListenerWithAddr
+	wg       sync.WaitGroup
+	logger   *slog.Logger
+	chanSend chan<- *dns.Message
+	conns    []*serverConnWithAddr
 }
 
-func (l *serverListener) run(listener *multicast.Listener) {
+func (l *serverListener) run(conn vnet.UDPConn) {
 	defer l.wg.Done()
 	for {
-		p, err := listener.Read()
+		b := make([]byte, 1500)
+		n, addr, err := conn.ReadFrom(b)
 		if err != nil {
 			break
 		}
-		m, err := dns.ParseMessage(p.Data)
+		m, err := dns.ParseMessage(b[:n])
 		if err == nil {
-			m.Address = p.Addr.(*net.UDPAddr).AddrPort().Addr()
+			m.Address = addr.(*net.UDPAddr).AddrPort().Addr()
 			l.chanSend <- m
 		}
 	}
@@ -53,7 +54,7 @@ func (l *serverListener) run(listener *multicast.Listener) {
 
 func newServerListener(
 	logger *slog.Logger,
-	i multicast.Interface,
+	i vnet.Interface,
 	chanSend chan<- *dns.Message,
 ) (*serverListener, error) {
 	flags := i.Flags()
@@ -81,7 +82,7 @@ func newServerListener(
 			if ip.IsLoopback() {
 				continue
 			}
-			v, err := multicast.NewListener("udp4", i, IPv4Address)
+			v, err := i.Listen("udp4", IPv4Address)
 			if err != nil {
 				l.logger.Warn(err.Error())
 				continue
@@ -89,15 +90,15 @@ func newServerListener(
 			l.logger.Info("listening on IPv4", "addr", ip)
 			l.wg.Add(1)
 			go l.run(v)
-			l.listeners = append(l.listeners, &serverListenerWithAddr{
-				Addr:     IPv4Address,
-				Listener: v,
+			l.conns = append(l.conns, &serverConnWithAddr{
+				Addr: IPv4Address,
+				Conn: v,
 			})
 		default:
 			if ip.IsLinkLocalUnicast() {
 				continue
 			}
-			v, err := multicast.NewListener("udp6", i, IPv6Address)
+			v, err := i.Listen("udp6", IPv6Address)
 			if err != nil {
 				l.logger.Warn(err.Error())
 				continue
@@ -105,21 +106,21 @@ func newServerListener(
 			l.logger.Info("listening on IPv6", "addr", ip)
 			l.wg.Add(1)
 			go l.run(v)
-			l.listeners = append(l.listeners, &serverListenerWithAddr{
-				Addr:     IPv6Address,
-				Listener: v,
+			l.conns = append(l.conns, &serverConnWithAddr{
+				Addr: IPv6Address,
+				Conn: v,
 			})
 		}
 	}
-	if len(l.listeners) == 0 {
+	if len(l.conns) == 0 {
 		return nil, errors.New("no usable addresses")
 	}
 	return l, nil
 }
 
 func (l *serverListener) Close() {
-	for _, v := range l.listeners {
-		v.Listener.Close()
+	for _, v := range l.conns {
+		v.Conn.Close()
 	}
 	l.wg.Wait()
 }
