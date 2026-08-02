@@ -8,6 +8,7 @@ import (
 )
 
 type serverConn struct {
+	addr       *net.UDPAddr
 	conn       vnet.UDPConn
 	chanSend   chan<- *dns.Message
 	chanClosed chan any
@@ -40,6 +41,7 @@ func newServerConn(
 		return nil, err
 	}
 	c := &serverConn{
+		addr:       addr,
 		conn:       v,
 		chanSend:   chanSend,
 		chanClosed: make(chan any),

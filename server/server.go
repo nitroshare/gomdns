@@ -1,10 +1,13 @@
 package server
 
 import (
+	"errors"
 	"log/slog"
+	"net"
 	"sync"
 	"time"
 
+	"github.com/nitroshare/gomdns"
 	"github.com/nitroshare/gomdns/broadcaster"
 	"github.com/nitroshare/gomdns/cache"
 	"github.com/nitroshare/gomdns/dns"
@@ -14,8 +17,9 @@ import (
 )
 
 var (
-	syncAdd        = syncpoint.New()
-	syncAddSuccess = syncpoint.New()
+	syncAdd           = syncpoint.New()
+	syncAddSuccess    = syncpoint.New()
+	syncRemoveSuccess = syncpoint.New()
 )
 
 // Server sends and receives packets on the system's multicast interfaces.
@@ -36,12 +40,63 @@ type Server struct {
 	chanClosed  chan any
 }
 
+func (s *Server) createConns(i vnet.Interface) ([]*serverConn, error) {
+	var (
+		listConn = []*serverConn{}
+		flags    = i.Flags()
+	)
+	if flags&net.FlagUp == 0 ||
+		flags&net.FlagRunning == 0 ||
+		flags&net.FlagMulticast == 0 {
+		return nil, errors.New("interface does not support multicast")
+	}
+	v, err := i.Addrs()
+	if err != nil {
+		return nil, err
+	}
+	for _, a := range v {
+		ipnet, ok := a.(*net.IPNet)
+		if !ok {
+			continue
+		}
+		ip := ipnet.IP
+		switch {
+		case ip.To4() != nil:
+			if ip.IsLoopback() {
+				continue
+			}
+			c, err := newServerConn(i, "udp4", gomdns.IPv4Address, s.chanRecv)
+			if err != nil {
+				s.logger.Warn(err.Error())
+				continue
+			}
+			listConn = append(listConn, c)
+		default:
+			if ip.IsLinkLocalUnicast() {
+				continue
+			}
+			c, err := newServerConn(i, "udp4", gomdns.IPv6Address, s.chanRecv)
+			if err != nil {
+				s.logger.Warn(err.Error())
+				continue
+			}
+			listConn = append(listConn, c)
+		}
+	}
+	if len(listConn) == 0 {
+		return nil, errors.New("no supported addresses")
+	}
+	return listConn, nil
+}
+
 func (s *Server) run() {
 	defer close(s.chanClosed)
-	ifaceMap := map[string]*serverListener{}
+	ifaceMap := map[string][]*serverConn{}
 	defer func() {
-		for _, i := range ifaceMap {
-			i.Close()
+		for _, a := range ifaceMap {
+			for _, c := range a {
+				c.Close()
+			}
 		}
 	}()
 	for {
@@ -51,31 +106,27 @@ func (s *Server) run() {
 				return
 			}
 			syncAdd.Trigger()
-			l, err := newServerListener(s.logger, v, s.chanRecv)
+			a, err := s.createConns(v)
 			if err != nil {
 				s.logger.Warn(err.Error())
 				continue
 			}
-			ifaceMap[v.Name()] = l
+			ifaceMap[v.Name()] = a
 			syncAddSuccess.Trigger()
 		case v, ok := <-s.chanRemoved:
 			if !ok {
 				return
 			}
 			delete(ifaceMap, v.Name())
+			syncRemoveSuccess.Trigger()
 		case m := <-s.chanRecv:
 			s.Received.Send(m)
 		case m := <-s.chanSend:
 			b, err := m.Serialize()
 			if err == nil {
-				for _, i := range ifaceMap {
-					for _, c := range i.conns {
-						if _, err := c.Conn.WriteTo(
-							b,
-							c.Addr,
-						); err != nil {
-							s.logger.Error(err.Error())
-						}
+				for _, a := range ifaceMap {
+					for _, c := range a {
+						c.conn.WriteTo(b, c.addr)
 					}
 				}
 			} else {
