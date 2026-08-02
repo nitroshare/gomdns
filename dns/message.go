@@ -30,14 +30,18 @@ type Message struct {
 func (m *Message) String() string {
 	var type_ string
 	if m.Response {
-		type_ = "response"
+		if m.Address.IsValid() {
+			type_ = fmt.Sprintf("response from %v", m.Address)
+		} else {
+			type_ = "response"
+		}
 	} else {
 		type_ = "query"
 	}
 	return fmt.Sprintf(
-		"%s id:%d",
-		type_,
+		"id: %d %s",
 		m.TransactionID,
+		type_,
 	)
 }
 
