@@ -8,7 +8,6 @@ import (
 )
 
 var (
-	syncInit   = syncpoint.New()
 	syncQueued = syncpoint.New()
 	syncRead   = syncpoint.New()
 )
@@ -23,7 +22,7 @@ type mockUDPConn struct {
 	chanClosed   chan any
 }
 
-func (m *mockUDPConn) run() {
+func (m *mockUDPConn) run(chanInit chan<- any) {
 	defer close(m.chanClosed)
 	var (
 		chanQueued     = m.iface.queued.Subscribe()
@@ -31,7 +30,7 @@ func (m *mockUDPConn) run() {
 		writeQueue     = &list.List[*Packet]{}
 		waitingForRead bool
 	)
-	syncInit.Trigger()
+	close(chanInit)
 	for {
 		var (
 			chanDequeue chan *Packet
@@ -71,16 +70,20 @@ func (m *mockUDPConn) run() {
 }
 
 func newMockUDPConn(iface *MockInterface) *mockUDPConn {
-	m := &mockUDPConn{
-		iface:        iface,
-		chanRead:     make(chan any),
-		chanReadRet:  make(chan *Packet),
-		chanWrite:    make(chan *Packet),
-		chanWriteRet: make(chan any),
-		chanClose:    make(chan any),
-		chanClosed:   make(chan any),
-	}
-	go m.run()
+	var (
+		m = &mockUDPConn{
+			iface:        iface,
+			chanRead:     make(chan any),
+			chanReadRet:  make(chan *Packet),
+			chanWrite:    make(chan *Packet),
+			chanWriteRet: make(chan any),
+			chanClose:    make(chan any),
+			chanClosed:   make(chan any),
+		}
+		chanInit = make(chan any)
+	)
+	go m.run(chanInit)
+	<-chanInit
 	return m
 }
 

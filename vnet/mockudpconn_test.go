@@ -21,13 +21,10 @@ func TestUDPConn(t *testing.T) {
 	defer i.Close()
 
 	t.Run("Read with data ready", func(t *testing.T) {
-		syncInit.Activate()
-		defer syncInit.Deactivate()
 		syncQueued.Activate()
 		defer syncQueued.Deactivate()
 		m, _ := i.Listen("", nil)
 		defer m.Close()
-		syncInit.Wait()
 		i.EnqueueRead(testPacket)
 		syncQueued.Wait()
 		b := make([]byte, 32)
