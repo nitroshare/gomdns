@@ -15,7 +15,16 @@ func TestMessageString(t *testing.T) {
 		(&Message{
 			TransactionID: 1,
 		}).String(),
-		"query id:1",
+		"id: 1 query",
+		true,
+	)
+	compare.Compare(
+		t,
+		(&Message{
+			Address:  netip.MustParseAddr("1.2.3.4"),
+			Response: true,
+		}).String(),
+		"id: 0 response from 1.2.3.4",
 		true,
 	)
 	compare.Compare(
@@ -23,7 +32,7 @@ func TestMessageString(t *testing.T) {
 		(&Message{
 			Response: true,
 		}).String(),
-		"response id:0",
+		"id: 0 response",
 		true,
 	)
 }
