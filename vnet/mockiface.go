@@ -20,6 +20,9 @@ type MockInterface struct {
 	// MockFlags provides flags to be returned by Flags()
 	MockFlags net.Flags
 
+	// MockListenError provides an error to be returned by Listen.
+	MockListenError error
+
 	queued      *broadcaster.Broadcaster[*Packet]
 	chanDequeue chan *Packet
 }
@@ -37,6 +40,9 @@ func (m *MockInterface) Addrs() ([]net.Addr, error) { return m.MockAddrs, m.Mock
 func (m *MockInterface) Flags() net.Flags           { return m.MockFlags }
 
 func (m *MockInterface) Listen(string, *net.UDPAddr) (UDPConn, error) {
+	if m.MockListenError != nil {
+		return nil, m.MockListenError
+	}
 	return newMockUDPConn(m), nil
 }
 
